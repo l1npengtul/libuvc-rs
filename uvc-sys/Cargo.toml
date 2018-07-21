@@ -1,0 +1,7 @@
+[package]
+name = "uvc-sys"
+version = "0.1.0"
+authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
+
+[dependencies]
+libc = "*"

@@ -1,0 +1,12 @@
+[package]
+name = "uvc-rs"
+version = "0.1.0"
+authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
+
+[dependencies]
+libc = "*"
+uvc-sys = { path = "uvc-sys" }
+png = "*"
+
+[profile.release]
+debug = true
