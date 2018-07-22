@@ -6,7 +6,7 @@ pub struct Frame {
 }
 
 impl Frame {
-    pub unsafe fn from_raw(frame: *mut ::uvc_frame) -> Frame {
+    pub(crate) unsafe fn from_raw(frame: *mut ::uvc_frame) -> Frame {
         assert!(!frame.is_null());
         Frame { frame }
     }

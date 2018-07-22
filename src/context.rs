@@ -37,7 +37,7 @@ impl Context {
                 if dev.is_null() {
                     break;
                 } else {
-                    devices.push(Device { dev });
+                    devices.push(Device::from_raw(dev));
                     len += 1;
                 }
             }

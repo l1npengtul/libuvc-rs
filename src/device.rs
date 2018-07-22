@@ -6,10 +6,14 @@ use std::ffi::CStr;
 use error::{UvcError, UvcResult};
 
 pub struct Device {
-    pub(crate) dev: *mut uvc_device,
+    dev: *mut uvc_device,
 }
 
 impl Device {
+    pub(crate) unsafe fn from_raw(dev: *mut uvc_device) -> Self {
+        assert!(!dev.is_null());
+        Device { dev }
+    }
     pub fn open(&self) -> UvcResult<DeviceHandle> {
         unsafe {
             let mut devh = ::std::mem::uninitialized();
@@ -82,7 +86,7 @@ impl Device {
 }
 
 pub struct DeviceHandle {
-    pub devh: *mut uvc_device_handle,
+    pub(crate) devh: *mut uvc_device_handle,
 }
 
 impl DeviceHandle {
