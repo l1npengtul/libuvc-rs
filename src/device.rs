@@ -1,3 +1,4 @@
+use streaming;
 use uvc_sys::*;
 
 use std::ffi::CStr;
@@ -90,7 +91,7 @@ impl DeviceHandle {
         width: u32,
         height: u32,
         fps: u32,
-    ) -> UvcResult<::StreamCtrl> {
+    ) -> UvcResult<streaming::StreamCtrl> {
         unsafe {
             let mut ctrl = ::std::mem::uninitialized();
             let err = uvc_get_stream_ctrl_format_size(

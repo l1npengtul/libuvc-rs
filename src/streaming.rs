@@ -1,13 +1,14 @@
 use uvc_sys::*;
 
 use error::{UvcError, UvcResult};
+use frame::Frame;
 
 pub struct StreamCtrl {
     pub ctrl: uvc_stream_ctrl_t,
 }
 
 struct Vtable<U: Send + Sync> {
-    func: Box<Fn(&uvc_frame, &mut U)>,
+    func: Box<Fn(&Frame, &mut U)>,
     data: U,
 }
 
@@ -15,6 +16,12 @@ pub struct ActiveStream<'a, U: 'a + Send + Sync> {
     devh: &'a ::DeviceHandle,
     #[allow(unused)]
     vtable: Box<Vtable<U>>,
+}
+
+impl<'a, U: 'a + Send + Sync> ActiveStream<'a, U> {
+    pub fn stop(self: Self) {
+        // Simply drop the stream to cancel it
+    }
 }
 
 impl<'a, U: 'a + Send + Sync> Drop for ActiveStream<'a, U> {
@@ -27,27 +34,27 @@ impl<'a, U: 'a + Send + Sync> Drop for ActiveStream<'a, U> {
 
 unsafe extern "C" fn trampoline<F, U>(frame: *mut uvc_frame, tuple: *mut ::std::os::raw::c_void)
 where
-    F: 'static + Send + Sync + Fn(&uvc_frame, &mut U),
+    F: 'static + Send + Sync + Fn(&Frame, &mut U),
     U: 'static + Send + Sync,
 {
-    if frame.is_null() {
-        println!("Frame is null");
-        ::std::process::abort();
-    }
-    let frame = &*frame;
-
-    if tuple.is_null() {
-        println!("tuple is null");
-        ::std::process::abort();
-    }
-
     let panic = ::std::panic::catch_unwind(|| {
+        if frame.is_null() {
+            panic!("Frame if null");
+        }
+        let frame = Frame::from_raw(frame);
+
+        if tuple.is_null() {
+            println!("VTable is null");
+            ::std::process::abort();
+        }
+
         let vtable = tuple as *mut Box<Vtable<U>>;
 
         let func = &(*vtable).func;
         let data = &mut (*vtable).data;
 
-        func(frame, data);
+        func(&frame, data);
+        ::std::mem::forget(frame);
     });
 
     if panic.is_err() {
@@ -63,7 +70,7 @@ impl<'a> StreamCtrl {
         user_data: U,
     ) -> UvcResult<ActiveStream<'a, U>>
     where
-        F: 'static + Send + Sync + Fn(&uvc_frame, &mut U),
+        F: 'static + Send + Sync + Fn(&Frame, &mut U),
         U: 'static + Send + Sync,
     {
         let mut tuple = Box::new(Vtable::<U> {

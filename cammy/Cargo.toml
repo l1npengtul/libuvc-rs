@@ -1,7 +1,8 @@
 [package]
-name = "uvc-rs"
+name = "cammy"
 version = "0.1.0"
 authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
 
 [dependencies]
-uvc-sys = { path = "uvc-sys" }
+png = "*"
+uvc-rs = { version = "*", path = "../" }
