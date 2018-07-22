@@ -1,28 +1,31 @@
 use uvc_sys::*;
 
 use device::Device;
+use error::{UvcError, UvcResult};
 
+#[derive(Debug)]
 pub struct Context {
     ctx: *mut uvc_context,
 }
 
 impl Context {
-    pub fn new() -> Result<Context, ::UvcError> {
+    pub fn new() -> UvcResult<Context> {
         unsafe {
             let mut ctx = ::std::mem::uninitialized();
-            let err = uvc_init(&mut ctx, ::std::ptr::null_mut());
-            if err != uvc_error::UVC_SUCCESS {
-                return Err(err);
+            let err = uvc_init(&mut ctx, ::std::ptr::null_mut()).into();
+            if err != UvcError::Success {
+                Err(err)
+            } else {
+                Ok(Context { ctx })
             }
-            Ok(Context { ctx })
         }
     }
 
-    pub fn get_devices(&self) -> Result<Vec<Device>, ::UvcError> {
+    pub fn get_devices(&self) -> UvcResult<Vec<Device>> {
         unsafe {
             let mut list = ::std::mem::uninitialized();
-            let err = uvc_get_device_list(self.ctx, &mut list);
-            if err != uvc_error::UVC_SUCCESS {
+            let err = uvc_get_device_list(self.ctx, &mut list).into();
+            if err != UvcError::Success {
                 return Err(err);
             }
 

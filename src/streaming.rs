@@ -1,5 +1,7 @@
 use uvc_sys::*;
 
+use error::{UvcError, UvcResult};
+
 pub struct StreamCtrl {
     pub ctrl: uvc_stream_ctrl_t,
 }
@@ -23,7 +25,7 @@ impl<'a, U: 'a + Send + Sync> Drop for ActiveStream<'a, U> {
     }
 }
 
-unsafe extern "C" fn trampoline<F, U>(frame: *mut uvc_frame, tuple: *mut ::libc::c_void)
+unsafe extern "C" fn trampoline<F, U>(frame: *mut uvc_frame, tuple: *mut ::std::os::raw::c_void)
 where
     F: 'static + Send + Sync + Fn(&uvc_frame, &mut U),
     U: 'static + Send + Sync,
@@ -46,8 +48,6 @@ where
         let data = &mut (*vtable).data;
 
         func(frame, data);
-
-        ::std::mem::forget(vtable);
     });
 
     if panic.is_err() {
@@ -61,7 +61,7 @@ impl<'a> StreamCtrl {
         devh: &'a ::DeviceHandle,
         cb: F,
         user_data: U,
-    ) -> Result<ActiveStream<'a, U>, ::UvcError>
+    ) -> UvcResult<ActiveStream<'a, U>>
     where
         F: 'static + Send + Sync + Fn(&uvc_frame, &mut U),
         U: 'static + Send + Sync,
@@ -76,16 +76,17 @@ impl<'a> StreamCtrl {
                 devh.devh,
                 &mut self.ctrl,
                 Some(trampoline::<F, U>),
-                &mut tuple as *mut _ as *mut ::libc::c_void,
+                &mut tuple as *mut _ as *mut ::std::os::raw::c_void,
                 0,
-            );
-            if err != ::uvc_error::UVC_SUCCESS {
-                return Err(err);
+            ).into();
+            if err != UvcError::Success {
+                Err(err)
+            } else {
+                Ok(ActiveStream {
+                    devh,
+                    vtable: tuple,
+                })
             }
-            return Ok(ActiveStream {
-                devh,
-                vtable: tuple,
-            });
         }
     }
 }

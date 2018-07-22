@@ -1,23 +1,22 @@
-extern crate libc;
 extern crate png;
 extern crate uvc_sys;
 
 mod context;
 mod device;
+mod error;
 mod streaming;
 
 use streaming::*;
 
 pub use context::Context;
 pub use device::{Device, DeviceHandle};
+pub use error::UvcError;
 
 use uvc_sys::*;
 
 use png::HasParameters;
 use std::fs::File;
 use std::io::BufWriter;
-
-type UvcError = uvc_error;
 
 fn frame_to_png(frame: &uvc_frame, count: &mut u32) {
     let new_frame = unsafe { &mut *uvc_allocate_frame((frame.width * frame.height * 3) as usize) };
@@ -29,7 +28,7 @@ fn frame_to_png(frame: &uvc_frame, count: &mut u32) {
         unsafe { std::slice::from_raw_parts(new_frame.data as *const u8, new_frame.data_bytes) };
 
     let file = File::create(format!("cam{}.png", frame.sequence)).unwrap();
-    let ref mut w = BufWriter::new(file);
+    let w = &mut BufWriter::new(file);
 
     let mut encoder = png::Encoder::new(w, frame.width, frame.height);
     encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);

@@ -2,26 +2,28 @@ use uvc_sys::*;
 
 use std::ffi::CStr;
 
+use error::{UvcError, UvcResult};
+
 pub struct Device {
     pub(crate) dev: *mut uvc_device,
 }
 
 impl Device {
-    pub fn open(&self) -> Result<DeviceHandle, ::UvcError> {
+    pub fn open(&self) -> UvcResult<DeviceHandle> {
         unsafe {
             let mut devh = ::std::mem::uninitialized();
-            let err = uvc_open(self.dev, &mut devh);
-            if err != uvc_error::UVC_SUCCESS {
-                return Err(err);
+            let err = uvc_open(self.dev, &mut devh).into();
+            match err {
+                UvcError::Success => Ok(DeviceHandle { devh }),
+                err => Err(err),
             }
-            Ok(DeviceHandle { devh })
         }
     }
-    pub fn description(&self) -> Result<DeviceDescription, ::UvcError> {
+    pub fn description(&self) -> UvcResult<DeviceDescription> {
         unsafe {
             let mut desc = ::std::mem::uninitialized();
-            let err = uvc_get_device_descriptor(self.dev, &mut desc);
-            if err != uvc_error::UVC_SUCCESS {
+            let err = uvc_get_device_descriptor(self.dev, &mut desc).into();
+            if err != UvcError::Success {
                 return Err(err);
             }
 
@@ -88,18 +90,18 @@ impl DeviceHandle {
         width: u32,
         height: u32,
         fps: u32,
-    ) -> Result<::StreamCtrl, ::UvcError> {
+    ) -> UvcResult<::StreamCtrl> {
         unsafe {
             let mut ctrl = ::std::mem::uninitialized();
             let err = uvc_get_stream_ctrl_format_size(
                 self.devh,
                 &mut ctrl,
-                uvc_frame_format::UVC_FRAME_FORMAT_YUYV,
+                uvc_frame_format_UVC_FRAME_FORMAT_YUYV,
                 width as i32,
                 height as i32,
                 fps as i32,
-            );
-            if err != uvc_error::UVC_SUCCESS {
+            ).into();
+            if err != UvcError::Success {
                 Err(err)
             } else {
                 Ok(::StreamCtrl { ctrl })
