@@ -32,19 +32,20 @@ fn frame_to_png(frame: &Frame, count: &mut Arc<Mutex<u32>>) {
 }
 
 fn main() {
-    let ctx = Context::new().unwrap();
-    let list = ctx.get_devices().expect("Could not get list");
+    let ctx = Context::new().expect("Could not create context");
+    let list = ctx.get_devices().expect("Could not get list of devices");
+
     let dev = list.first().unwrap();
     let description = dev.description().unwrap();
     println!("{:?}", description);
 
-    let devh = dev.open().unwrap();
+    let devh = dev.open().expect("Could not open device");
 
     let mut ctrl = devh
         .get_stream_ctrl_with_size_and_fps(640, 480, 30)
         .unwrap();
 
-    println!("{:?}", ctrl.ctrl);
+    println!("{:?}", ctrl);
 
     let calls = Arc::new(Mutex::new(0u32));
     let stream = ctrl

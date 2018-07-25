@@ -5,21 +5,37 @@ use std::ffi::CStr;
 
 use error::{UvcError, UvcResult};
 
-pub struct Device {
-    dev: *mut uvc_device,
+use std::marker::PhantomData;
+use std::ptr::NonNull;
+
+#[derive(Debug)]
+pub struct Device<'a> {
+    dev: NonNull<uvc_device>,
+    _dev: PhantomData<&'a uvc_device>,
 }
 
-impl Device {
-    pub(crate) unsafe fn from_raw(dev: *mut uvc_device) -> Self {
-        assert!(!dev.is_null());
-        Device { dev }
+impl<'a> Drop for Device<'a> {
+    fn drop(&mut self) {
+        unsafe { uvc_unref_device(self.dev.as_ptr()) };
     }
-    pub fn open(&self) -> UvcResult<DeviceHandle> {
+}
+
+impl<'a> Device<'a> {
+    pub(crate) unsafe fn from_raw(dev: *mut uvc_device) -> Self {
+        Device {
+            dev: NonNull::new(dev).unwrap(),
+            _dev: PhantomData,
+        }
+    }
+    pub fn open(&'a self) -> UvcResult<DeviceHandle<'a>> {
         unsafe {
             let mut devh = ::std::mem::uninitialized();
-            let err = uvc_open(self.dev, &mut devh).into();
+            let err = uvc_open(self.dev.as_ptr(), &mut devh).into();
             match err {
-                UvcError::Success => Ok(DeviceHandle { devh }),
+                UvcError::Success => Ok(DeviceHandle {
+                    devh: NonNull::new(devh).unwrap(),
+                    _devh: PhantomData,
+                }),
                 err => Err(err),
             }
         }
@@ -27,7 +43,7 @@ impl Device {
     pub fn description(&self) -> UvcResult<DeviceDescription> {
         unsafe {
             let mut desc = ::std::mem::uninitialized();
-            let err = uvc_get_device_descriptor(self.dev, &mut desc).into();
+            let err = uvc_get_device_descriptor(self.dev.as_ptr(), &mut desc).into();
             if err != UvcError::Success {
                 return Err(err);
             }
@@ -85,21 +101,22 @@ impl Device {
     }
 }
 
-pub struct DeviceHandle {
-    pub(crate) devh: *mut uvc_device_handle,
+pub struct DeviceHandle<'a> {
+    pub(crate) devh: NonNull<uvc_device_handle>,
+    _devh: PhantomData<&'a uvc_device_handle>,
 }
 
-impl DeviceHandle {
+impl<'a> DeviceHandle<'a> {
     pub fn get_stream_ctrl_with_size_and_fps(
         &self,
         width: u32,
         height: u32,
         fps: u32,
-    ) -> UvcResult<streaming::StreamCtrl> {
+    ) -> UvcResult<streaming::StreamCtrl<'a>> {
         unsafe {
             let mut ctrl = ::std::mem::uninitialized();
             let err = uvc_get_stream_ctrl_format_size(
-                self.devh,
+                self.devh.as_ptr(),
                 &mut ctrl,
                 uvc_frame_format_UVC_FRAME_FORMAT_YUYV,
                 width as i32,
@@ -109,16 +126,19 @@ impl DeviceHandle {
             if err != UvcError::Success {
                 Err(err)
             } else {
-                Ok(::StreamCtrl { ctrl })
+                Ok(::StreamCtrl {
+                    ctrl,
+                    _ctrl: PhantomData,
+                })
             }
         }
     }
 }
 
-impl Drop for DeviceHandle {
+impl<'a> Drop for DeviceHandle<'a> {
     fn drop(&mut self) {
         unsafe {
-            uvc_close(self.devh);
+            uvc_close(self.devh.as_ptr());
         }
     }
 }

@@ -8,9 +8,9 @@ mod streaming;
 
 use uvc_sys::*;
 
-pub(crate) use streaming::StreamCtrl;
+pub use streaming::{ActiveStream, StreamCtrl};
 
 pub use context::Context;
-pub use device::{Device, DeviceHandle};
-pub use error::UvcError;
+pub use device::{Device, DeviceDescription, DeviceHandle};
+pub use error::{UvcError, UvcResult};
 pub use frame::Frame;
