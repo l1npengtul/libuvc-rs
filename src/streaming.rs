@@ -23,7 +23,7 @@ pub struct ActiveStream<'a, U: 'a + Send + Sync> {
 }
 
 impl<'a, U: 'a + Send + Sync> ActiveStream<'a, U> {
-    pub fn stop(self: Self) {
+    pub fn stop(self) {
         // Taking ownership of the stream, which drops it
     }
 }

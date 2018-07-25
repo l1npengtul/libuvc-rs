@@ -21,7 +21,7 @@ impl Frame {
             frame: NonNull::new(frame).unwrap(),
         }
     }
-    pub fn to_rgb(self: &Self) -> UvcResult<Frame> {
+    pub fn to_rgb(&self) -> UvcResult<Frame> {
         let new_frame = Frame::new_with_dimensions(self.width(), self.height(), 3); // RGB -> 3 bytes
 
         let err = unsafe { ::uvc_any2rgb(self.frame.as_ptr(), new_frame.frame.as_ptr()) }.into();
@@ -32,7 +32,7 @@ impl Frame {
         }
     }
 
-    pub fn to_bytes(self: &Self) -> &[u8] {
+    pub fn to_bytes(&self) -> &[u8] {
         unsafe {
             ::std::slice::from_raw_parts(
                 (*self.frame.as_ptr()).data as *const u8,
@@ -41,10 +41,10 @@ impl Frame {
         }
     }
 
-    pub fn width(self: &Self) -> u32 {
+    pub fn width(&self) -> u32 {
         unsafe { (*self.frame.as_ptr()) }.width
     }
-    pub fn height(self: &Self) -> u32 {
+    pub fn height(&self) -> u32 {
         unsafe { (*self.frame.as_ptr()) }.height
     }
 }
