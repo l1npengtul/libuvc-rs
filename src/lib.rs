@@ -13,4 +13,4 @@ pub use streaming::{ActiveStream, StreamCtrl};
 pub use context::Context;
 pub use device::{Device, DeviceDescription, DeviceHandle};
 pub use error::{UvcError, UvcResult};
-pub use frame::Frame;
+pub use frame::{Frame, FrameFormat};
