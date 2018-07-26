@@ -12,14 +12,14 @@ pub struct StreamCtrl<'a> {
 }
 
 struct Vtable<U> {
-    func: Box<Fn(&Frame, &mut U)>,
+    func: Box<dyn Fn(&Frame, &mut U)>,
     data: U,
 }
 
 pub struct ActiveStream<'a, U: 'a + Send + Sync> {
     devh: &'a ::DeviceHandle<'a>,
     #[allow(unused)]
-    vtable: Box<Vtable<U>>,
+    vtable: *mut Vtable<U>,
 }
 
 impl<'a, U: 'a + Send + Sync> ActiveStream<'a, U> {
@@ -32,6 +32,7 @@ impl<'a, U: 'a + Send + Sync> Drop for ActiveStream<'a, U> {
     fn drop(&mut self) {
         unsafe {
             uvc_stop_streaming(self.devh.devh.as_ptr());
+            let _vtable = Box::from_raw(self.vtable);
         }
     }
 }
@@ -51,7 +52,7 @@ where
             panic!("Userdata is null");
         }
 
-        let vtable = userdata as *mut Box<Vtable<U>>;
+        let vtable = userdata as *mut Vtable<U>;
 
         let func = &(*vtable).func;
         let data = &mut (*vtable).data;
@@ -78,17 +79,19 @@ impl<'a> StreamCtrl<'a> {
         F: 'static + Send + Sync + Fn(&Frame, &mut U),
         U: 'static + Send + Sync,
     {
-        let mut tuple = Box::new(Vtable::<U> {
+        let tuple = Box::new(Vtable::<U> {
             func: Box::new(cb),
             data: user_data,
         });
+
+        let tuple = Box::into_raw(tuple);
 
         unsafe {
             let err = uvc_start_streaming(
                 devh.devh.as_ptr(),
                 &mut self.ctrl,
                 Some(trampoline::<F, U>),
-                &mut tuple as *mut _ as *mut ::std::os::raw::c_void,
+                tuple as *mut ::std::os::raw::c_void,
                 0,
             ).into();
             if err != UvcError::Success {
