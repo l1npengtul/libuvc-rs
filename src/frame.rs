@@ -1,10 +1,13 @@
-use error::{UvcError, UvcResult};
+use error::{Error, Result};
 
 use std::ptr::NonNull;
 
 use uvc_sys::*;
 
+unsafe impl Send for Frame {}
+unsafe impl Sync for Frame {}
 #[derive(Debug)]
+/// Frame containing the image data
 pub struct Frame {
     frame: NonNull<uvc_frame>,
 }
@@ -23,17 +26,20 @@ impl Frame {
             frame: NonNull::new(frame).unwrap(),
         }
     }
-    pub fn to_rgb(&self) -> UvcResult<Frame> {
+
+    /// Convert to rgb format
+    pub fn to_rgb(&self) -> Result<Frame> {
         let new_frame = Frame::new_with_dimensions(self.width(), self.height(), 3); // RGB -> 3 bytes
 
         let err = unsafe { uvc_any2rgb(self.frame.as_ptr(), new_frame.frame.as_ptr()) }.into();
-        if err != UvcError::Success {
+        if err != Error::Success {
             Err(err)
         } else {
             Ok(new_frame)
         }
     }
 
+    /// Get the raw image data
     pub fn to_bytes(&self) -> &[u8] {
         unsafe {
             ::std::slice::from_raw_parts(
@@ -43,13 +49,17 @@ impl Frame {
         }
     }
 
+    /// Width of the captured frame
     pub fn width(&self) -> u32 {
         unsafe { (*self.frame.as_ptr()) }.width
     }
+
+    /// Heigth of the captured frame
     pub fn height(&self) -> u32 {
         unsafe { (*self.frame.as_ptr()) }.height
     }
 
+    /// Format of the captured frame
     pub fn format(&self) -> FrameFormat {
         unsafe { (*self.frame.as_ptr()) }.frame_format.into()
     }
@@ -61,6 +71,8 @@ impl Drop for Frame {
     }
 }
 
+#[derive(Debug)]
+/// Format of a frame
 pub enum FrameFormat {
     Unknown,
     Any,

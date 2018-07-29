@@ -1,12 +1,15 @@
 use uvc_sys::*;
 
 use device::DeviceList;
-use error::{UvcError, UvcResult};
+use error::{Error, Result};
 
 use std::marker::PhantomData;
 use std::ptr::NonNull;
 
+unsafe impl<'a> Send for Context<'a> {}
+unsafe impl<'a> Sync for Context<'a> {}
 #[derive(Debug)]
+/// Contains the `libuvc` context
 pub struct Context<'a> {
     ctx: NonNull<uvc_context>,
     _ctx: PhantomData<&'a uvc_context>,
@@ -21,11 +24,12 @@ impl<'a> Drop for Context<'a> {
 }
 
 impl<'a> Context<'a> {
-    pub fn new() -> UvcResult<Self> {
+    /// Creates a new context
+    pub fn new() -> Result<Self> {
         unsafe {
             let mut ctx = ::std::mem::uninitialized();
             let err = uvc_init(&mut ctx, ::std::ptr::null_mut()).into();
-            if err != UvcError::Success {
+            if err != Error::Success {
                 Err(err)
             } else {
                 Ok(Context {
@@ -36,11 +40,12 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub fn devices(&'a self) -> UvcResult<DeviceList<'a>> {
+    /// Enumerates the available devices
+    pub fn devices(&'a self) -> Result<DeviceList<'a>> {
         unsafe {
             let mut list = ::std::mem::uninitialized();
             let err = uvc_get_device_list(self.ctx.as_ptr(), &mut list).into();
-            if err != UvcError::Success {
+            if err != Error::Success {
                 return Err(err);
             }
 

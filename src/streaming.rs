@@ -1,11 +1,14 @@
 use uvc_sys::*;
 
-use error::{UvcError, UvcResult};
+use error::{Error, Result};
 use frame::Frame;
 
 use std::marker::PhantomData;
 
+unsafe impl<'a> Send for StreamCtrl<'a> {}
+unsafe impl<'a> Sync for StreamCtrl<'a> {}
 #[derive(Debug)]
+/// Stream parameters
 pub struct StreamCtrl<'a> {
     pub(crate) ctrl: uvc_stream_ctrl_t,
     pub(crate) _ctrl: PhantomData<&'a uvc_stream_ctrl_t>,
@@ -16,6 +19,10 @@ struct Vtable<U> {
     data: U,
 }
 
+unsafe impl<'a, U: Send + Sync> Send for ActiveStream<'a, U> {}
+unsafe impl<'a, U: Send + Sync> Sync for ActiveStream<'a, U> {}
+#[derive(Debug)]
+/// Active stream
 pub struct ActiveStream<'a, U: 'a + Send + Sync> {
     devh: &'a ::DeviceHandle<'a>,
     #[allow(unused)]
@@ -23,6 +30,7 @@ pub struct ActiveStream<'a, U: 'a + Send + Sync> {
 }
 
 impl<'a, U: 'a + Send + Sync> ActiveStream<'a, U> {
+    /// Stop the stream
     pub fn stop(self) {
         // Taking ownership of the stream, which drops it
     }
@@ -69,12 +77,13 @@ where
 }
 
 impl<'a> StreamCtrl<'a> {
+    /// Begin a stream, use the callback to save the frames
     pub fn start_streaming<F, U>(
         &'a mut self,
         devh: &'a ::DeviceHandle,
         cb: F,
         user_data: U,
-    ) -> UvcResult<ActiveStream<'a, U>>
+    ) -> Result<ActiveStream<'a, U>>
     where
         F: 'static + Send + Sync + Fn(&Frame, &mut U),
         U: 'static + Send + Sync,
@@ -94,7 +103,7 @@ impl<'a> StreamCtrl<'a> {
                 tuple as *mut ::std::os::raw::c_void,
                 0,
             ).into();
-            if err != UvcError::Success {
+            if err != Error::Success {
                 Err(err)
             } else {
                 Ok(ActiveStream {

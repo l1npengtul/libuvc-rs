@@ -3,11 +3,15 @@ use uvc_sys::*;
 
 use std::ffi::CStr;
 
-use error::{UvcError, UvcResult};
+use error::{Error, Result};
 
 use std::marker::PhantomData;
 use std::ptr::NonNull;
 
+unsafe impl<'a> Send for DeviceList<'a> {}
+unsafe impl<'a> Sync for DeviceList<'a> {}
+#[derive(Debug)]
+/// List of camera devices, iterate to get the device(s)
 pub struct DeviceList<'a> {
     list: NonNull<*mut uvc_device>,
     _ph: PhantomData<&'a &'a uvc_device>,
@@ -51,7 +55,11 @@ impl<'a> Iterator for DeviceList<'a> {
         Some(unsafe { Device::from_raw(*item) })
     }
 }
+
+unsafe impl<'a> Send for Device<'a> {}
+unsafe impl<'a> Sync for Device<'a> {}
 #[derive(Debug)]
+/// Device that can be opened
 pub struct Device<'a> {
     dev: NonNull<uvc_device>,
     _dev: PhantomData<&'a uvc_device>,
@@ -70,12 +78,13 @@ impl<'a> Device<'a> {
             _dev: PhantomData,
         }
     }
-    pub fn open(&'a self) -> UvcResult<DeviceHandle<'a>> {
+    /// Create handle to a device
+    pub fn open(&'a self) -> Result<DeviceHandle<'a>> {
         unsafe {
             let mut devh = ::std::mem::uninitialized();
             let err = uvc_open(self.dev.as_ptr(), &mut devh).into();
             match err {
-                UvcError::Success => Ok(DeviceHandle {
+                Error::Success => Ok(DeviceHandle {
                     devh: NonNull::new(devh).unwrap(),
                     _devh: PhantomData,
                 }),
@@ -83,11 +92,12 @@ impl<'a> Device<'a> {
             }
         }
     }
-    pub fn description(&self) -> UvcResult<DeviceDescription> {
+    /// Get the description of a device
+    pub fn description(&self) -> Result<DeviceDescription> {
         unsafe {
             let mut desc = ::std::mem::uninitialized();
             let err = uvc_get_device_descriptor(self.dev.as_ptr(), &mut desc).into();
-            if err != UvcError::Success {
+            if err != Error::Success {
                 return Err(err);
             }
 
@@ -144,18 +154,23 @@ impl<'a> Device<'a> {
     }
 }
 
+unsafe impl<'a> Send for DeviceHandle<'a> {}
+unsafe impl<'a> Sync for DeviceHandle<'a> {}
+#[derive(Debug)]
+/// Open handle to a device
 pub struct DeviceHandle<'a> {
     pub(crate) devh: NonNull<uvc_device_handle>,
     _devh: PhantomData<&'a uvc_device_handle>,
 }
 
 impl<'a> DeviceHandle<'a> {
+    /// Creates a stream handle
     pub fn get_stream_ctrl_with_size_and_fps(
         &self,
         width: u32,
         height: u32,
         fps: u32,
-    ) -> UvcResult<streaming::StreamCtrl<'a>> {
+    ) -> Result<streaming::StreamCtrl<'a>> {
         unsafe {
             let mut ctrl = ::std::mem::uninitialized();
             let err = uvc_get_stream_ctrl_format_size(
@@ -166,7 +181,7 @@ impl<'a> DeviceHandle<'a> {
                 height as i32,
                 fps as i32,
             ).into();
-            if err != UvcError::Success {
+            if err != Error::Success {
                 Err(err)
             } else {
                 Ok(::StreamCtrl {
@@ -187,6 +202,7 @@ impl<'a> Drop for DeviceHandle<'a> {
 }
 
 #[derive(Debug)]
+/// Describes the device
 pub struct DeviceDescription {
     pub id_vendor: u16,
     pub id_product: u16,

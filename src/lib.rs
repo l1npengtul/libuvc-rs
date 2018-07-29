@@ -1,3 +1,5 @@
+//! Safe wrapper around `libuvc`
+
 extern crate uvc_sys;
 
 mod context;
@@ -12,5 +14,5 @@ pub use streaming::{ActiveStream, StreamCtrl};
 
 pub use context::Context;
 pub use device::{Device, DeviceDescription, DeviceHandle, DeviceList};
-pub use error::{UvcError, UvcResult};
+pub use error::{Error, Result};
 pub use frame::{Frame, FrameFormat};
