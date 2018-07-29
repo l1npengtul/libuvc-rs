@@ -1,6 +1,6 @@
 use uvc_sys::*;
 
-use device::Device;
+use device::DeviceList;
 use error::{UvcError, UvcResult};
 
 use std::marker::PhantomData;
@@ -12,8 +12,16 @@ pub struct Context<'a> {
     _ctx: PhantomData<&'a uvc_context>,
 }
 
+impl<'a> Drop for Context<'a> {
+    fn drop(&mut self) {
+        unsafe {
+            uvc_exit(self.ctx.as_ptr());
+        }
+    }
+}
+
 impl<'a> Context<'a> {
-    pub fn new() -> UvcResult<Context<'a>> {
+    pub fn new() -> UvcResult<Self> {
         unsafe {
             let mut ctx = ::std::mem::uninitialized();
             let err = uvc_init(&mut ctx, ::std::ptr::null_mut()).into();
@@ -28,7 +36,7 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub fn get_devices(&'a self) -> UvcResult<Vec<Device<'a>>> {
+    pub fn devices(&'a self) -> UvcResult<DeviceList<'a>> {
         unsafe {
             let mut list = ::std::mem::uninitialized();
             let err = uvc_get_device_list(self.ctx.as_ptr(), &mut list).into();
@@ -36,29 +44,7 @@ impl<'a> Context<'a> {
                 return Err(err);
             }
 
-            let mut devices = Vec::new();
-            let mut len = 0;
-            loop {
-                let walker = list.offset(len);
-                let dev = *walker;
-                if dev.is_null() {
-                    break;
-                } else {
-                    devices.push(Device::from_raw(dev));
-                    len += 1;
-                }
-            }
-            uvc_free_device_list(list, false as u8);
-
-            Ok(devices)
-        }
-    }
-}
-
-impl<'a> Drop for Context<'a> {
-    fn drop(&mut self) {
-        unsafe {
-            uvc_exit(self.ctx.as_ptr());
+            Ok(DeviceList::new(NonNull::new(list).unwrap()))
         }
     }
 }

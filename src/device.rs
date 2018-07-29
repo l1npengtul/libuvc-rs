@@ -8,6 +8,49 @@ use error::{UvcError, UvcResult};
 use std::marker::PhantomData;
 use std::ptr::NonNull;
 
+pub struct DeviceList<'a> {
+    list: NonNull<*mut uvc_device>,
+    _ph: PhantomData<&'a &'a uvc_device>,
+
+    reached_end: bool,
+    index: usize,
+}
+
+impl<'a> Drop for DeviceList<'a> {
+    fn drop(&mut self) {
+        unsafe { uvc_free_device_list(self.list.as_ptr(), false as u8) }
+    }
+}
+
+impl<'a> DeviceList<'a> {
+    pub(crate) fn new(list: NonNull<*mut uvc_device>) -> Self {
+        Self {
+            list,
+            _ph: PhantomData,
+            reached_end: false,
+            index: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for DeviceList<'a> {
+    type Item = Device<'a>;
+
+    fn next(&mut self) -> Option<Device<'a>> {
+        if self.reached_end {
+            return None;
+        }
+
+        let item = unsafe { self.list.as_ptr().offset(self.index as isize) };
+        if item.is_null() {
+            self.reached_end = true;
+            return None;
+        }
+
+        self.index += 1;
+        Some(unsafe { Device::from_raw(*item) })
+    }
+}
 #[derive(Debug)]
 pub struct Device<'a> {
     dev: NonNull<uvc_device>,
