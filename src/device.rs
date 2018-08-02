@@ -2,11 +2,11 @@ use streaming;
 use uvc_sys::*;
 
 use std::ffi::CStr;
-
-use error::{Error, Result};
-
 use std::marker::PhantomData;
 use std::ptr::NonNull;
+
+use error::{Error, Result};
+use frame::FrameFormat;
 
 unsafe impl<'a> Send for DeviceList<'a> {}
 unsafe impl<'a> Sync for DeviceList<'a> {}
@@ -164,9 +164,22 @@ pub struct DeviceHandle<'a> {
 }
 
 impl<'a> DeviceHandle<'a> {
+    /// List all supported formats
+    pub fn supported_formats(&self) -> FormatDescriptors<'a> {
+        unsafe {
+            let format_descs = uvc_get_format_descs(self.devh.as_ptr());
+
+            FormatDescriptors {
+                head: format_descs,
+                _ph: PhantomData,
+            }
+        }
+    }
+
     /// Creates a stream handle
-    pub fn get_stream_ctrl_with_size_and_fps(
+    pub fn get_stream_ctrl_with_format_size_and_fps(
         &self,
+        format: FrameFormat,
         width: u32,
         height: u32,
         fps: u32,
@@ -176,7 +189,7 @@ impl<'a> DeviceHandle<'a> {
             let err = uvc_get_stream_ctrl_format_size(
                 self.devh.as_ptr(),
                 &mut ctrl,
-                uvc_frame_format_UVC_FRAME_FORMAT_YUYV,
+                format.into(),
                 width as i32,
                 height as i32,
                 fps as i32,
@@ -210,4 +223,168 @@ pub struct DeviceDescription {
     pub serial_number: Option<String>,
     pub manufacturer: Option<String>,
     pub product: Option<String>,
+}
+
+unsafe impl<'a> Send for FormatDescriptor<'a> {}
+unsafe impl<'a> Sync for FormatDescriptor<'a> {}
+/// Describes possible formats
+pub struct FormatDescriptor<'a> {
+    format_desc: NonNull<uvc_format_desc_t>,
+    _ph: PhantomData<&'a uvc_format_desc_t>,
+}
+
+#[derive(Debug)]
+pub enum FormatDescriptionSubtype {
+    Undefined,
+    InputHeader,
+    OutputHeader,
+    StillImageFrame,
+    FormatUncompressed,
+    FrameUncompressed,
+    FormatMJPEG,
+    FrameMJPEG,
+    FormatMPEG2TS,
+    FormatDV,
+    ColorFormat,
+    FormatFrameBased,
+    FrameFrameBased,
+    FormatStreamBased,
+}
+
+impl<'a> FormatDescriptor<'a> {
+    pub fn supported_formats(&self) -> FrameDescriptors {
+        FrameDescriptors {
+            head: unsafe { (*self.format_desc.as_ptr()).frame_descs },
+            _ph: PhantomData,
+        }
+    }
+
+    pub fn subtype(&self) -> FormatDescriptionSubtype {
+        #[allow(non_upper_case_globals)]
+        match unsafe { (*self.format_desc.as_ptr()).bDescriptorSubtype } {
+            uvc_vs_desc_subtype_UVC_VS_UNDEFINED => FormatDescriptionSubtype::Undefined,
+            uvc_vs_desc_subtype_UVC_VS_INPUT_HEADER => FormatDescriptionSubtype::InputHeader,
+            uvc_vs_desc_subtype_UVC_VS_OUTPUT_HEADER => FormatDescriptionSubtype::OutputHeader,
+            uvc_vs_desc_subtype_UVC_VS_STILL_IMAGE_FRAME => {
+                FormatDescriptionSubtype::StillImageFrame
+            }
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_UNCOMPRESSED => {
+                FormatDescriptionSubtype::FormatUncompressed
+            }
+            uvc_vs_desc_subtype_UVC_VS_FRAME_UNCOMPRESSED => {
+                FormatDescriptionSubtype::FrameUncompressed
+            }
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_MJPEG => FormatDescriptionSubtype::FormatMJPEG,
+            uvc_vs_desc_subtype_UVC_VS_FRAME_MJPEG => FormatDescriptionSubtype::FrameMJPEG,
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_MPEG2TS => FormatDescriptionSubtype::FormatMPEG2TS,
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_DV => FormatDescriptionSubtype::FormatDV,
+            uvc_vs_desc_subtype_UVC_VS_COLORFORMAT => FormatDescriptionSubtype::ColorFormat,
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_FRAME_BASED => {
+                FormatDescriptionSubtype::FormatFrameBased
+            }
+            uvc_vs_desc_subtype_UVC_VS_FRAME_FRAME_BASED => {
+                FormatDescriptionSubtype::FrameFrameBased
+            }
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_STREAM_BASED => {
+                FormatDescriptionSubtype::FormatStreamBased
+            }
+            _ => panic!("This enum value is not valid"),
+        }
+    }
+}
+
+unsafe impl<'a> Send for FormatDescriptors<'a> {}
+unsafe impl<'a> Sync for FormatDescriptors<'a> {}
+/// Iterate to get a FormatDescriptor
+pub struct FormatDescriptors<'a> {
+    head: *const uvc_format_desc_t,
+    _ph: PhantomData<&'a uvc_format_desc_t>,
+}
+
+impl<'a> Iterator for FormatDescriptors<'a> {
+    type Item = FormatDescriptor<'a>;
+
+    fn next(&mut self) -> Option<FormatDescriptor<'a>> {
+        match NonNull::new(self.head as *mut _) {
+            None => None,
+            Some(x) => {
+                let current = FormatDescriptor {
+                    format_desc: x,
+                    _ph: PhantomData,
+                };
+                self.head = unsafe { (*self.head).next };
+                Some(current)
+            }
+        }
+    }
+}
+
+unsafe impl<'a> Send for FrameDescriptor<'a> {}
+unsafe impl<'a> Sync for FrameDescriptor<'a> {}
+#[derive(Debug)]
+/// Describes possible frames
+pub struct FrameDescriptor<'a> {
+    frame_desc: NonNull<uvc_frame_desc_t>,
+    _ph: PhantomData<&'a uvc_frame_desc_t>,
+}
+
+impl<'a> FrameDescriptor<'a> {
+    pub fn width(&self) -> u16 {
+        unsafe { (*self.frame_desc.as_ptr()).wWidth }
+    }
+    pub fn height(&self) -> u16 {
+        unsafe { (*self.frame_desc.as_ptr()).wHeight }
+    }
+    /// Time in 100ns
+    pub fn intervals(&self) -> &[u32] {
+        unsafe {
+            let intervals = (*self.frame_desc.as_ptr()).intervals;
+            let mut len = 0;
+            loop {
+                let x = *intervals.offset(len);
+                if x == 0 {
+                    return ::std::slice::from_raw_parts::<'a>(intervals, len as usize);
+                }
+                len += 1;
+            }
+        }
+    }
+
+    /// Duration between captures
+    pub fn intervals_duration(&self) -> Vec<::std::time::Duration> {
+        let times = self.intervals();
+        let mut dur = Vec::with_capacity(times.len());
+
+        for i in times {
+            dur.push(::std::time::Duration::from_nanos(*i as u64 * 100));
+        }
+
+        return dur;
+    }
+}
+
+unsafe impl<'a> Send for FrameDescriptors<'a> {}
+unsafe impl<'a> Sync for FrameDescriptors<'a> {}
+/// Iterate to get a FrameDescriptor
+pub struct FrameDescriptors<'a> {
+    head: *mut uvc_frame_desc_t,
+    _ph: PhantomData<&'a uvc_frame_desc_t>,
+}
+
+impl<'a> Iterator for FrameDescriptors<'a> {
+    type Item = FrameDescriptor<'a>;
+
+    fn next(&mut self) -> Option<FrameDescriptor<'a>> {
+        match NonNull::new(self.head) {
+            None => None,
+            Some(x) => {
+                let current = FrameDescriptor {
+                    frame_desc: x,
+                    _ph: PhantomData,
+                };
+                unsafe { self.head = (*self.head).next };
+                Some(current)
+            }
+        }
+    }
 }

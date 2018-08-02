@@ -63,6 +63,11 @@ impl Frame {
     pub fn format(&self) -> FrameFormat {
         unsafe { (*self.frame.as_ptr()) }.frame_format.into()
     }
+
+    /// Monotonically increasing frame number
+    pub fn sequence(&self) -> u32 {
+        unsafe { (*self.frame.as_ptr()).sequence }
+    }
 }
 
 impl Drop for Frame {
@@ -118,6 +123,31 @@ impl From<uvc_frame_format> for FrameFormat {
             uvc_frame_format_UVC_FRAME_FORMAT_COUNT => FrameFormat::Count,
             uvc_frame_format_UVC_FRAME_FORMAT_UNKNOWN => FrameFormat::Unknown, // unreachable
             _ => FrameFormat::Unknown,
+        }
+    }
+}
+
+impl Into<uvc_frame_format> for FrameFormat {
+    fn into(self: FrameFormat) -> uvc_frame_format {
+        match self {
+            FrameFormat::Any => uvc_frame_format_UVC_FRAME_FORMAT_ANY,
+            FrameFormat::Uncompressed => uvc_frame_format_UVC_FRAME_FORMAT_UNCOMPRESSED,
+            FrameFormat::Compressed => uvc_frame_format_UVC_FRAME_FORMAT_COMPRESSED,
+            FrameFormat::YUYV => uvc_frame_format_UVC_FRAME_FORMAT_YUYV,
+            FrameFormat::UYVY => uvc_frame_format_UVC_FRAME_FORMAT_UYVY,
+            FrameFormat::RGB => uvc_frame_format_UVC_FRAME_FORMAT_RGB,
+            FrameFormat::BGR => uvc_frame_format_UVC_FRAME_FORMAT_BGR,
+            FrameFormat::MJPEG => uvc_frame_format_UVC_FRAME_FORMAT_MJPEG,
+            FrameFormat::GRAY8 => uvc_frame_format_UVC_FRAME_FORMAT_GRAY8,
+            FrameFormat::GRAY16 => uvc_frame_format_UVC_FRAME_FORMAT_GRAY16,
+            FrameFormat::BY8 => uvc_frame_format_UVC_FRAME_FORMAT_BY8,
+            FrameFormat::BA81 => uvc_frame_format_UVC_FRAME_FORMAT_BA81,
+            FrameFormat::SGRBG8 => uvc_frame_format_UVC_FRAME_FORMAT_SGRBG8,
+            FrameFormat::SGBRG8 => uvc_frame_format_UVC_FRAME_FORMAT_SGBRG8,
+            FrameFormat::SRGGB8 => uvc_frame_format_UVC_FRAME_FORMAT_SRGGB8,
+            FrameFormat::SBGGR8 => uvc_frame_format_UVC_FRAME_FORMAT_SBGGR8,
+            FrameFormat::Count => uvc_frame_format_UVC_FRAME_FORMAT_COUNT,
+            FrameFormat::Unknown => uvc_frame_format_UVC_FRAME_FORMAT_UNKNOWN,
         }
     }
 }

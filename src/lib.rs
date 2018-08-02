@@ -13,6 +13,9 @@ use uvc_sys::*;
 pub use streaming::{ActiveStream, StreamCtrl};
 
 pub use context::Context;
-pub use device::{Device, DeviceDescription, DeviceHandle, DeviceList};
+pub use device::{
+    Device, DeviceDescription, DeviceHandle, DeviceList, FormatDescriptionSubtype,
+    FormatDescriptor, FormatDescriptors, FrameDescriptor, FrameDescriptors,
+};
 pub use error::{Error, Result};
 pub use frame::{Frame, FrameFormat};

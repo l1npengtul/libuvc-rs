@@ -54,20 +54,26 @@ fn main() {
 
     let devh = dev.open().expect("Could not open device");
 
+    for i in devh.supported_formats() {
+        println!("{:?}", i.subtype());
+        for j in i.supported_formats() {
+            println!("Width x Height: {} x {}", j.width(), j.height());
+            println!("{:?}", j.intervals_duration());
+        }
+    }
+
     let mut ctrl = devh
-        .get_stream_ctrl_with_size_and_fps(640, 480, 30)
+        .get_stream_ctrl_with_format_size_and_fps(FrameFormat::Any, 960, 540, 20)
         .unwrap();
 
-    println!("{:#?}", ctrl);
-
-    let calls = Arc::new(Mutex::new(None));
+    let frame = Arc::new(Mutex::new(None));
     let _stream = ctrl
-        .start_streaming(&devh, callback_frame_to_vec, calls.clone())
+        .start_streaming(&devh, callback_frame_to_vec, frame.clone())
         .unwrap();
 
     use glium::glutin;
     let mut events_loop = glium::glutin::EventsLoop::new();
-    let window = glium::glutin::WindowBuilder::new();
+    let window = glium::glutin::WindowBuilder::new().with_decorations(false);
     let context = glium::glutin::ContextBuilder::new();
     let display = glium::Display::new(window, context, &events_loop).unwrap();
 
@@ -140,10 +146,9 @@ fn main() {
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 1.0, 1.0);
 
-        let mut mutex = Mutex::lock(&calls).unwrap();
+        let mut mutex = Mutex::lock(&frame).unwrap();
 
-        let frame: Option<Frame> = mutex.take();
-        match frame {
+        match mutex.take() {
             None => {
                 // No new frame to render
             }
