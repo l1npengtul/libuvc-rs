@@ -19,8 +19,9 @@ impl Frame {
         }
     }
 
-    fn new_with_dimensions(width: u32, height: u32, components: u32) -> Self {
-        let frame = unsafe { uvc_allocate_frame((width * height * components) as usize) };
+    /// Does not initialize any data
+    unsafe fn new_with_dimensions(width: u32, height: u32, components: u32) -> Self {
+        let frame = uvc_allocate_frame((width * height * components) as usize);
 
         Frame {
             frame: NonNull::new(frame).unwrap(),
@@ -29,7 +30,7 @@ impl Frame {
 
     /// Convert to rgb format
     pub fn to_rgb(&self) -> Result<Frame> {
-        let new_frame = Frame::new_with_dimensions(self.width(), self.height(), 3); // RGB -> 3 bytes
+        let new_frame = unsafe { Frame::new_with_dimensions(self.width(), self.height(), 3) }; // RGB -> 3 bytes
 
         let err = unsafe { uvc_any2rgb(self.frame.as_ptr(), new_frame.frame.as_ptr()) }.into();
         if err != Error::Success {
@@ -76,7 +77,7 @@ impl Drop for Frame {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 /// Format of a frame
 pub enum FrameFormat {
     Unknown,

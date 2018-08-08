@@ -14,7 +14,7 @@ pub use streaming::{ActiveStream, StreamCtrl};
 
 pub use context::Context;
 pub use device::{
-    Device, DeviceDescription, DeviceHandle, DeviceList, FormatDescriptionSubtype,
+    Device, DeviceDescription, DeviceHandle, DeviceList, Format, FormatDescriptionSubtype,
     FormatDescriptor, FormatDescriptors, FrameDescriptor, FrameDescriptors,
 };
 pub use error::{Error, Result};

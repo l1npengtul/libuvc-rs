@@ -163,6 +163,14 @@ pub struct DeviceHandle<'a> {
     _devh: PhantomData<&'a uvc_device_handle>,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub struct Format {
+    pub width: u32,
+    pub height: u32,
+    pub fps: u32,
+    pub format: FrameFormat,
+}
+
 impl<'a> DeviceHandle<'a> {
     /// List all supported formats
     pub fn supported_formats(&self) -> FormatDescriptors<'a> {
@@ -174,6 +182,33 @@ impl<'a> DeviceHandle<'a> {
                 _ph: PhantomData,
             }
         }
+    }
+
+    /// Iterates over all available formats to select the best format
+    /// f should compare (x, y) and return the preferred format
+    pub fn get_preferred_format<F>(&self, f: F) -> Option<Format>
+    where
+        F: Fn(Format, Format) -> Format,
+    {
+        let mut pref_format = None;
+        for i in self.supported_formats() {
+            for j in i.supported_formats() {
+                for k in j.intervals() {
+                    let format = Format {
+                        width: j.width() as u32,
+                        height: j.height() as u32,
+                        fps: 10_000_000 / *k,
+                        format: if i.subtype().is_jpeg() {
+                            FrameFormat::MJPEG
+                        } else {
+                            FrameFormat::Any
+                        },
+                    };
+                    pref_format = Some(pref_format.map_or(format, |x| f(x, format)));
+                }
+            }
+        }
+        pref_format
     }
 
     /// Creates a stream handle
@@ -204,6 +239,16 @@ impl<'a> DeviceHandle<'a> {
             }
         }
     }
+
+    /// Creates a stream handle
+    pub fn get_stream_ctrl_with_format(&self, format: Format) -> Result<streaming::StreamCtrl<'a>> {
+        return self.get_stream_ctrl_with_format_size_and_fps(
+            format.format,
+            format.width,
+            format.height,
+            format.fps,
+        );
+    }
 }
 
 impl<'a> Drop for DeviceHandle<'a> {
@@ -233,7 +278,7 @@ pub struct FormatDescriptor<'a> {
     _ph: PhantomData<&'a uvc_format_desc_t>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum FormatDescriptionSubtype {
     Undefined,
     InputHeader,
@@ -249,6 +294,15 @@ pub enum FormatDescriptionSubtype {
     FormatFrameBased,
     FrameFrameBased,
     FormatStreamBased,
+}
+
+impl FormatDescriptionSubtype {
+    pub fn is_jpeg(&self) -> bool {
+        match self {
+            FormatDescriptionSubtype::FormatMJPEG | FormatDescriptionSubtype::FrameMJPEG => true,
+            _ => false,
+        }
+    }
 }
 
 impl<'a> FormatDescriptor<'a> {

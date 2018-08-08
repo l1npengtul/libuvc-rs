@@ -1,46 +1,61 @@
 #[macro_use]
 extern crate glium;
-extern crate png;
+extern crate image;
 extern crate uvc_rs;
 
-use std::fs::File;
-use std::io::BufWriter;
+use std::error::Error;
 use std::sync::{Arc, Mutex};
 
 use glium::Surface;
-use png::HasParameters;
-use uvc_rs::*;
+use image::ImageDecoder;
+use uvc_rs::{Context, Frame, FrameFormat};
 
-#[allow(unused)]
-fn callback_frame_to_png(frame: &Frame, count: &mut Arc<Mutex<u32>>) {
-    let new_frame = frame.to_rgb().unwrap();
+fn jpeg_frame_to_image(frame: &Frame) -> image::ImageResult<image::RgbaImage> {
+    let bytes = frame.to_bytes();
 
-    let bytes = new_frame.to_bytes();
+    let decoder = image::jpeg::JPEGDecoder::new(bytes);
 
-    let count = {
-        let mut count = Mutex::lock(&count).unwrap();
-        let copy = *count;
-        *count += 1;
-        copy
-    };
+    let mut frames = decoder.into_frames()?;
 
-    let file = File::create(format!("cam{}.png", count)).unwrap();
-    let w = &mut BufWriter::new(file);
-
-    let mut encoder = png::Encoder::new(w, frame.width(), frame.height());
-    encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);
-    let mut writer = encoder.write_header().unwrap();
-
-    writer.write_image_data(&bytes).unwrap();
+    Ok(frames.next().unwrap().into_buffer())
 }
 
-#[allow(unused)]
-fn callback_frame_to_vec(frame: &Frame, count: &mut Arc<Mutex<Option<Frame>>>) {
-    let new_frame = frame.to_rgb().unwrap();
+fn frame_to_raw_image(
+    frame: &Frame,
+) -> Result<glium::texture::RawImage2d<'static, u8>, Box<dyn Error>> {
+    let format = frame.format();
+    if format == FrameFormat::MJPEG {
+        let buffer = jpeg_frame_to_image(frame)?;
+        let (width, height) = buffer.dimensions();
+        let buf = buffer.into_raw();
+        let image = glium::texture::RawImage2d::from_raw_rgba(buf, (width, height));
 
-    let mut data = Mutex::lock(&count).unwrap();
+        return Ok(image);
+    }
 
-    *data = Some(new_frame);
+    let new_frame = frame.to_rgb()?;
+    let data = new_frame.to_bytes();
+
+    let image = glium::texture::RawImage2d::from_raw_rgb(
+        data.to_vec(),
+        (new_frame.width(), new_frame.height()),
+    );
+
+    return Ok(image);
+}
+
+fn callback_frame_to_image(
+    frame: &Frame,
+    data: &mut Arc<Mutex<Option<glium::texture::RawImage2d<u8>>>>,
+) {
+    let image = frame_to_raw_image(frame);
+    match image {
+        Err(x) => println!("{:#?}", x),
+        Ok(x) => {
+            let mut data = Mutex::lock(&data).unwrap();
+            *data = Some(x);
+        }
+    }
 }
 
 fn main() {
@@ -54,21 +69,21 @@ fn main() {
 
     let devh = dev.open().expect("Could not open device");
 
-    for i in devh.supported_formats() {
-        println!("{:?}", i.subtype());
-        for j in i.supported_formats() {
-            println!("Width x Height: {} x {}", j.width(), j.height());
-            println!("{:?}", j.intervals_duration());
-        }
-    }
+    let format = devh
+        .get_preferred_format(|x, y| {
+            if x.fps >= y.fps && x.width * x.height >= y.width * y.height {
+                return x;
+            } else {
+                return y;
+            }
+        }).unwrap();
 
-    let mut ctrl = devh
-        .get_stream_ctrl_with_format_size_and_fps(FrameFormat::Any, 960, 540, 20)
-        .unwrap();
+    println!("{:#?}", format);
+    let mut ctrl = devh.get_stream_ctrl_with_format(format).unwrap();
 
     let frame = Arc::new(Mutex::new(None));
     let _stream = ctrl
-        .start_streaming(&devh, callback_frame_to_vec, frame.clone())
+        .start_streaming(&devh, callback_frame_to_image, frame.clone())
         .unwrap();
 
     use glium::glutin;
@@ -133,7 +148,7 @@ fn main() {
             .unwrap();
 
     let mut closed = false;
-    let mut buffer = None;
+    let mut buffer: Option<glium::texture::SrgbTexture2d> = None;
     while !closed {
         events_loop.poll_events(|ev| match ev {
             glutin::Event::WindowEvent { event, .. } => match event {
@@ -152,22 +167,10 @@ fn main() {
             None => {
                 // No new frame to render
             }
-            Some(frame) => {
-                let data_bytes = frame.to_bytes();
-
-                let image = glium::texture::RawImage2d::from_raw_rgb(
-                    data_bytes.to_vec(),
-                    (frame.width(), frame.height()),
-                );
-
-                buffer = Some(
-                    glium::texture::SrgbTexture2d::with_format(
-                        &display,
-                        image,
-                        glium::texture::SrgbFormat::U8U8U8,
-                        glium::texture::MipmapsOption::NoMipmap,
-                    ).unwrap(),
-                );
+            Some(image) => {
+                let image = glium::texture::SrgbTexture2d::new(&display, image)
+                    .expect("Could not use image");
+                buffer = Some(image);
             }
         }
 
