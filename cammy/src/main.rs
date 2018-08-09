@@ -179,5 +179,15 @@ fn main() {
         }
 
         target.finish().unwrap();
+        println!(
+            "scan: {:?} ae: {:?} ae_pri: {:?} exp(abs): {:?} exp(rel): {:?} focus(abs): {:?} focus(rel) {:?}",
+            devh.scanning_mode(),
+            devh.ae_mode(),
+            devh.ae_priority(),
+            devh.exposure_abs(),
+            devh.exposure_rel(),
+            devh.focus_abs(),
+            devh.focus_rel(),
+        );
     }
 }

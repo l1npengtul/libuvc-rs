@@ -1,8 +1,9 @@
+use std;
 use std::ffi::CStr;
 use std::fmt;
 
 /// Result type of functions in this crate
-pub type Result<T> = ::std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 /// Error codes from `libusb`
 #[derive(Debug, PartialEq, Copy, Clone)]

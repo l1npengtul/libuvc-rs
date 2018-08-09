@@ -9,7 +9,7 @@ use std::slice;
 use std::time::Duration;
 
 use error::{Error, Result};
-use frame::FrameFormat;
+use formats::{Format, FrameFormat};
 
 unsafe impl<'a> Send for DeviceList<'a> {}
 unsafe impl<'a> Sync for DeviceList<'a> {}
@@ -174,15 +174,6 @@ unsafe impl<'a> Sync for DeviceHandle<'a> {}
 pub struct DeviceHandle<'a> {
     pub(crate) devh: NonNull<uvc_device_handle>,
     _devh: PhantomData<&'a uvc_device_handle>,
-}
-
-#[derive(Debug, Copy, Clone)]
-/// Format which a stream will produce
-pub struct Format {
-    pub width: u32,
-    pub height: u32,
-    pub fps: u32,
-    pub format: FrameFormat,
 }
 
 impl<'a> DeviceHandle<'a> {
