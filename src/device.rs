@@ -1,9 +1,12 @@
 use streaming;
 use uvc_sys::*;
 
+use std;
 use std::ffi::CStr;
 use std::marker::PhantomData;
 use std::ptr::NonNull;
+use std::slice;
+use std::time::Duration;
 
 use error::{Error, Result};
 use frame::FrameFormat;
@@ -81,7 +84,7 @@ impl<'a> Device<'a> {
     /// Create handle to a device
     pub fn open(&'a self) -> Result<DeviceHandle<'a>> {
         unsafe {
-            let mut devh = ::std::mem::uninitialized();
+            let mut devh = std::mem::uninitialized();
             let err = uvc_open(self.dev.as_ptr(), &mut devh).into();
             match err {
                 Error::Success => Ok(DeviceHandle {
@@ -95,7 +98,7 @@ impl<'a> Device<'a> {
     /// Get the description of a device
     pub fn description(&self) -> Result<DeviceDescription> {
         unsafe {
-            let mut desc = ::std::mem::uninitialized();
+            let mut desc = std::mem::uninitialized();
             let err = uvc_get_device_descriptor(self.dev.as_ptr(), &mut desc).into();
             if err != Error::Success {
                 return Err(err);
@@ -152,6 +155,16 @@ impl<'a> Device<'a> {
             descp
         }
     }
+
+    /// Bus number of which this device is connected
+    pub fn bus_number(&self) -> u8 {
+        unsafe { uvc_get_bus_number(self.dev.as_ptr()) }
+    }
+
+    /// Device address within the bus
+    pub fn device_address(&self) -> u8 {
+        unsafe { uvc_get_device_address(self.dev.as_ptr()) }
+    }
 }
 
 unsafe impl<'a> Send for DeviceHandle<'a> {}
@@ -164,6 +177,7 @@ pub struct DeviceHandle<'a> {
 }
 
 #[derive(Debug, Copy, Clone)]
+/// Format which a stream will produce
 pub struct Format {
     pub width: u32,
     pub height: u32,
@@ -223,7 +237,7 @@ impl<'a> DeviceHandle<'a> {
         fps: u32,
     ) -> Result<streaming::StreamCtrl<'a>> {
         unsafe {
-            let mut ctrl = ::std::mem::uninitialized();
+            let mut ctrl = std::mem::uninitialized();
             let err = uvc_get_stream_ctrl_format_size(
                 self.devh.as_ptr(),
                 &mut ctrl,
@@ -392,7 +406,7 @@ impl<'a> FrameDescriptor<'a> {
             loop {
                 let x = *intervals.offset(len);
                 if x == 0 {
-                    return ::std::slice::from_raw_parts::<'a>(intervals, len as usize);
+                    return slice::from_raw_parts::<'a>(intervals, len as usize);
                 }
                 len += 1;
             }
@@ -400,12 +414,12 @@ impl<'a> FrameDescriptor<'a> {
     }
 
     /// Duration between captures
-    pub fn intervals_duration(&self) -> Vec<::std::time::Duration> {
+    pub fn intervals_duration(&self) -> Vec<Duration> {
         let times = self.intervals();
         let mut durations = Vec::with_capacity(times.len());
 
         for i in times {
-            durations.push(::std::time::Duration::from_nanos(u64::from(*i) * 100));
+            durations.push(Duration::from_nanos(u64::from(*i) * 100));
         }
 
         durations

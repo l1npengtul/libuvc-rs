@@ -1,6 +1,7 @@
 use error::{Error, Result};
 
 use std::ptr::NonNull;
+use std::slice;
 
 use uvc_sys::*;
 
@@ -43,7 +44,7 @@ impl Frame {
     /// Get the raw image data
     pub fn to_bytes(&self) -> &[u8] {
         unsafe {
-            ::std::slice::from_raw_parts(
+            slice::from_raw_parts(
                 (*self.frame.as_ptr()).data as *const u8,
                 (*self.frame.as_ptr()).data_bytes,
             )

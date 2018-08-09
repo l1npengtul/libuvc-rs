@@ -60,12 +60,26 @@ fn callback_frame_to_image(
 
 fn main() {
     let ctx = Context::new().expect("Could not create context");
-    let mut list = ctx.devices().expect("Could not get devices");
-
-    let dev = list.next().expect("No device available");
+    let dev = ctx
+        .find_device(None, None, None)
+        .expect("Could not find device");
 
     let description = dev.description().unwrap();
-    println!("{:#?}", description);
+    println!(
+        "Found device: Bus {:03} Device {:03} : ID {:04}:{:04} {} ({})",
+        dev.bus_number(),
+        dev.device_address(),
+        description.id_vendor,
+        description.id_product,
+        description.product.unwrap_or_else(|| "Unknown".to_owned()),
+        description
+            .manufacturer
+            .unwrap_or_else(|| "Unknown".to_owned())
+    );
+
+    // Open multiple devices by enumerating:
+    // let mut list = ctx.devices().expect("Could not get devices");
+    // let dev = list.next().expect("No device available");
 
     let devh = dev.open().expect("Could not open device");
 
@@ -78,7 +92,7 @@ fn main() {
             }
         }).unwrap();
 
-    println!("{:#?}", format);
+    println!("Best format found: {:?}", format);
     let mut ctrl = devh.get_stream_ctrl_with_format(format).unwrap();
 
     let frame = Arc::new(Mutex::new(None));

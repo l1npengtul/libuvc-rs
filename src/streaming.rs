@@ -3,7 +3,9 @@ use uvc_sys::*;
 use error::{Error, Result};
 use frame::Frame;
 
+use std;
 use std::marker::PhantomData;
+use std::os::raw::c_void;
 
 unsafe impl<'a> Send for StreamCtrl<'a> {}
 unsafe impl<'a> Sync for StreamCtrl<'a> {}
@@ -45,12 +47,12 @@ impl<'a, U: 'a + Send + Sync> Drop for ActiveStream<'a, U> {
     }
 }
 
-unsafe extern "C" fn trampoline<F, U>(frame: *mut uvc_frame, userdata: *mut ::std::os::raw::c_void)
+unsafe extern "C" fn trampoline<F, U>(frame: *mut uvc_frame, userdata: *mut c_void)
 where
     F: 'static + Send + Sync + Fn(&Frame, &mut U),
     U: 'static + Send + Sync,
 {
-    let panic = ::std::panic::catch_unwind(|| {
+    let panic = std::panic::catch_unwind(|| {
         if frame.is_null() {
             panic!("Frame is null");
         }
@@ -67,12 +69,12 @@ where
 
         func(&frame, data);
 
-        ::std::mem::forget(frame); // Not our frame
+        std::mem::forget(frame); // Not our frame
     });
 
     if panic.is_err() {
         eprintln!("User defined function panicked");
-        ::std::process::abort();
+        std::process::abort();
     }
 }
 
@@ -100,7 +102,7 @@ impl<'a> StreamCtrl<'a> {
                 devh.devh.as_ptr(),
                 &mut self.ctrl,
                 Some(trampoline::<F, U>),
-                tuple as *mut ::std::os::raw::c_void,
+                tuple as *mut c_void,
                 0,
             ).into();
             if err != Error::Success {
