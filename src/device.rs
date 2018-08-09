@@ -195,13 +195,16 @@ impl<'a> DeviceHandle<'a> {
             for j in i.supported_formats() {
                 for k in j.intervals() {
                     let format = Format {
-                        width: j.width() as u32,
-                        height: j.height() as u32,
+                        width: u32::from(j.width()),
+                        height: u32::from(j.height()),
                         fps: 10_000_000 / *k,
-                        format: if i.subtype().is_jpeg() {
-                            FrameFormat::MJPEG
-                        } else {
-                            FrameFormat::Any
+                        format: match j.subtype() {
+                            DescriptionSubtype::FormatMJPEG | DescriptionSubtype::FrameMJPEG => {
+                                FrameFormat::MJPEG
+                            }
+                            DescriptionSubtype::FormatUncompressed
+                            | DescriptionSubtype::FrameUncompressed => FrameFormat::Uncompressed,
+                            _ => FrameFormat::Any,
                         },
                     };
                     pref_format = Some(pref_format.map_or(format, |x| f(x, format)));
@@ -242,12 +245,12 @@ impl<'a> DeviceHandle<'a> {
 
     /// Creates a stream handle
     pub fn get_stream_ctrl_with_format(&self, format: Format) -> Result<streaming::StreamCtrl<'a>> {
-        return self.get_stream_ctrl_with_format_size_and_fps(
+        self.get_stream_ctrl_with_format_size_and_fps(
             format.format,
             format.width,
             format.height,
             format.fps,
-        );
+        )
     }
 }
 
@@ -279,7 +282,8 @@ pub struct FormatDescriptor<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum FormatDescriptionSubtype {
+/// Describes what frame or format is supported
+pub enum DescriptionSubtype {
     Undefined,
     InputHeader,
     OutputHeader,
@@ -296,11 +300,27 @@ pub enum FormatDescriptionSubtype {
     FormatStreamBased,
 }
 
-impl FormatDescriptionSubtype {
-    pub fn is_jpeg(&self) -> bool {
-        match self {
-            FormatDescriptionSubtype::FormatMJPEG | FormatDescriptionSubtype::FrameMJPEG => true,
-            _ => false,
+impl From<uvc_vs_desc_subtype> for DescriptionSubtype {
+    fn from(x: uvc_vs_desc_subtype) -> DescriptionSubtype {
+        #[allow(non_upper_case_globals)]
+        match x {
+            uvc_vs_desc_subtype_UVC_VS_UNDEFINED => DescriptionSubtype::Undefined,
+            uvc_vs_desc_subtype_UVC_VS_INPUT_HEADER => DescriptionSubtype::InputHeader,
+            uvc_vs_desc_subtype_UVC_VS_OUTPUT_HEADER => DescriptionSubtype::OutputHeader,
+            uvc_vs_desc_subtype_UVC_VS_STILL_IMAGE_FRAME => DescriptionSubtype::StillImageFrame,
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_UNCOMPRESSED => {
+                DescriptionSubtype::FormatUncompressed
+            }
+            uvc_vs_desc_subtype_UVC_VS_FRAME_UNCOMPRESSED => DescriptionSubtype::FrameUncompressed,
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_MJPEG => DescriptionSubtype::FormatMJPEG,
+            uvc_vs_desc_subtype_UVC_VS_FRAME_MJPEG => DescriptionSubtype::FrameMJPEG,
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_MPEG2TS => DescriptionSubtype::FormatMPEG2TS,
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_DV => DescriptionSubtype::FormatDV,
+            uvc_vs_desc_subtype_UVC_VS_COLORFORMAT => DescriptionSubtype::ColorFormat,
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_FRAME_BASED => DescriptionSubtype::FormatFrameBased,
+            uvc_vs_desc_subtype_UVC_VS_FRAME_FRAME_BASED => DescriptionSubtype::FrameFrameBased,
+            uvc_vs_desc_subtype_UVC_VS_FORMAT_STREAM_BASED => DescriptionSubtype::FormatStreamBased,
+            _ => DescriptionSubtype::Undefined,
         }
     }
 }
@@ -313,37 +333,8 @@ impl<'a> FormatDescriptor<'a> {
         }
     }
 
-    pub fn subtype(&self) -> FormatDescriptionSubtype {
-        #[allow(non_upper_case_globals)]
-        match unsafe { (*self.format_desc.as_ptr()).bDescriptorSubtype } {
-            uvc_vs_desc_subtype_UVC_VS_UNDEFINED => FormatDescriptionSubtype::Undefined,
-            uvc_vs_desc_subtype_UVC_VS_INPUT_HEADER => FormatDescriptionSubtype::InputHeader,
-            uvc_vs_desc_subtype_UVC_VS_OUTPUT_HEADER => FormatDescriptionSubtype::OutputHeader,
-            uvc_vs_desc_subtype_UVC_VS_STILL_IMAGE_FRAME => {
-                FormatDescriptionSubtype::StillImageFrame
-            }
-            uvc_vs_desc_subtype_UVC_VS_FORMAT_UNCOMPRESSED => {
-                FormatDescriptionSubtype::FormatUncompressed
-            }
-            uvc_vs_desc_subtype_UVC_VS_FRAME_UNCOMPRESSED => {
-                FormatDescriptionSubtype::FrameUncompressed
-            }
-            uvc_vs_desc_subtype_UVC_VS_FORMAT_MJPEG => FormatDescriptionSubtype::FormatMJPEG,
-            uvc_vs_desc_subtype_UVC_VS_FRAME_MJPEG => FormatDescriptionSubtype::FrameMJPEG,
-            uvc_vs_desc_subtype_UVC_VS_FORMAT_MPEG2TS => FormatDescriptionSubtype::FormatMPEG2TS,
-            uvc_vs_desc_subtype_UVC_VS_FORMAT_DV => FormatDescriptionSubtype::FormatDV,
-            uvc_vs_desc_subtype_UVC_VS_COLORFORMAT => FormatDescriptionSubtype::ColorFormat,
-            uvc_vs_desc_subtype_UVC_VS_FORMAT_FRAME_BASED => {
-                FormatDescriptionSubtype::FormatFrameBased
-            }
-            uvc_vs_desc_subtype_UVC_VS_FRAME_FRAME_BASED => {
-                FormatDescriptionSubtype::FrameFrameBased
-            }
-            uvc_vs_desc_subtype_UVC_VS_FORMAT_STREAM_BASED => {
-                FormatDescriptionSubtype::FormatStreamBased
-            }
-            _ => panic!("This enum value is not valid"),
-        }
+    pub fn subtype(&self) -> DescriptionSubtype {
+        unsafe { (*self.format_desc.as_ptr()).bDescriptorSubtype }.into()
     }
 }
 
@@ -389,6 +380,10 @@ impl<'a> FrameDescriptor<'a> {
     pub fn height(&self) -> u16 {
         unsafe { (*self.frame_desc.as_ptr()).wHeight }
     }
+    /// Type of frame
+    pub fn subtype(&self) -> DescriptionSubtype {
+        unsafe { (*self.frame_desc.as_ptr()).bDescriptorSubtype }.into()
+    }
     /// Time in 100ns
     pub fn intervals(&self) -> &[u32] {
         unsafe {
@@ -407,13 +402,13 @@ impl<'a> FrameDescriptor<'a> {
     /// Duration between captures
     pub fn intervals_duration(&self) -> Vec<::std::time::Duration> {
         let times = self.intervals();
-        let mut dur = Vec::with_capacity(times.len());
+        let mut durations = Vec::with_capacity(times.len());
 
         for i in times {
-            dur.push(::std::time::Duration::from_nanos(*i as u64 * 100));
+            durations.push(::std::time::Duration::from_nanos(u64::from(*i) * 100));
         }
 
-        return dur;
+        durations
     }
 }
 

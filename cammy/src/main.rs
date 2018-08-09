@@ -41,7 +41,7 @@ fn frame_to_raw_image(
         (new_frame.width(), new_frame.height()),
     );
 
-    return Ok(image);
+    Ok(image)
 }
 
 fn callback_frame_to_image(
@@ -72,9 +72,9 @@ fn main() {
     let format = devh
         .get_preferred_format(|x, y| {
             if x.fps >= y.fps && x.width * x.height >= y.width * y.height {
-                return x;
+                x
             } else {
-                return y;
+                y
             }
         }).unwrap();
 
