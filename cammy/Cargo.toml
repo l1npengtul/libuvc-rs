@@ -6,4 +6,3 @@ authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
 [dependencies]
 uvc-rs = { version = "*", path = "../" }
 glium = "*"
-image = "*"

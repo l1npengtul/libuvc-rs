@@ -1,5 +1,6 @@
 use error::{Error, Result};
 
+use std;
 use std::ptr::NonNull;
 use std::slice;
 
@@ -33,7 +34,36 @@ impl Frame {
     pub fn to_rgb(&self) -> Result<Frame> {
         let new_frame = unsafe { Frame::new_with_dimensions(self.width(), self.height(), 3) }; // RGB -> 3 bytes
 
-        let err = unsafe { uvc_any2rgb(self.frame.as_ptr(), new_frame.frame.as_ptr()) }.into();
+        let err = unsafe {
+            match self.format() {
+                FrameFormat::MJPEG => uvc_mjpeg2rgb(self.frame.as_ptr(), new_frame.frame.as_ptr()),
+                FrameFormat::YUYV => uvc_yuyv2rgb(self.frame.as_ptr(), new_frame.frame.as_ptr()),
+                FrameFormat::UYVY => uvc_uyvy2rgb(self.frame.as_ptr(), new_frame.frame.as_ptr()),
+                FrameFormat::Any => uvc_any2rgb(self.frame.as_ptr(), new_frame.frame.as_ptr()),
+                _ => uvc_any2rgb(self.frame.as_ptr(), new_frame.frame.as_ptr()),
+            }
+        }.into();
+
+        if err != Error::Success {
+            Err(err)
+        } else {
+            Ok(new_frame)
+        }
+    }
+
+    /// Convert to bgr format
+    pub fn to_bgr(&self) -> Result<Frame> {
+        let new_frame = unsafe { Frame::new_with_dimensions(self.width(), self.height(), 3) }; // BGR -> 3 bytes
+
+        let err = unsafe {
+            match self.format() {
+                FrameFormat::YUYV => uvc_yuyv2bgr(self.frame.as_ptr(), new_frame.frame.as_ptr()),
+                FrameFormat::UYVY => uvc_uyvy2bgr(self.frame.as_ptr(), new_frame.frame.as_ptr()),
+                FrameFormat::Any => uvc_any2bgr(self.frame.as_ptr(), new_frame.frame.as_ptr()),
+                _ => uvc_any2bgr(self.frame.as_ptr(), new_frame.frame.as_ptr()),
+            }
+        }.into();
+
         if err != Error::Success {
             Err(err)
         } else {
@@ -69,6 +99,19 @@ impl Frame {
     /// Monotonically increasing frame number
     pub fn sequence(&self) -> u32 {
         unsafe { (*self.frame.as_ptr()).sequence }
+    }
+
+    /// Clones a frame
+    pub fn duplicate(&self) -> Result<Frame> {
+        unsafe {
+            let new_frame = std::mem::uninitialized();
+
+            let err = uvc_duplicate_frame(self.frame.as_ptr(), new_frame).into();
+            if err != Error::Success {
+                return Err(err);
+            }
+            Ok(Frame::from_raw(new_frame))
+        }
     }
 }
 

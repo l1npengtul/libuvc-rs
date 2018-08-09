@@ -1,38 +1,16 @@
 #[macro_use]
 extern crate glium;
-extern crate image;
 extern crate uvc_rs;
 
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 
 use glium::Surface;
-use image::ImageDecoder;
-use uvc_rs::{Context, Frame, FrameFormat};
-
-fn jpeg_frame_to_image(frame: &Frame) -> image::ImageResult<image::RgbaImage> {
-    let bytes = frame.to_bytes();
-
-    let decoder = image::jpeg::JPEGDecoder::new(bytes);
-
-    let mut frames = decoder.into_frames()?;
-
-    Ok(frames.next().unwrap().into_buffer())
-}
+use uvc_rs::{Context, Frame};
 
 fn frame_to_raw_image(
     frame: &Frame,
 ) -> Result<glium::texture::RawImage2d<'static, u8>, Box<dyn Error>> {
-    let format = frame.format();
-    if format == FrameFormat::MJPEG {
-        let buffer = jpeg_frame_to_image(frame)?;
-        let (width, height) = buffer.dimensions();
-        let buf = buffer.into_raw();
-        let image = glium::texture::RawImage2d::from_raw_rgba(buf, (width, height));
-
-        return Ok(image);
-    }
-
     let new_frame = frame.to_rgb()?;
     let data = new_frame.to_bytes();
 
