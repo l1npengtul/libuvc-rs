@@ -44,7 +44,7 @@ fn main() {
 
     let description = dev.description().unwrap();
     println!(
-        "Found device: Bus {:03} Device {:03} : ID {:04}:{:04} {} ({})",
+        "Found device: Bus {:03} Device {:03} : ID {:04x}:{:04x} {} ({})",
         dev.bus_number(),
         dev.device_address(),
         description.vendor_id,
@@ -91,7 +91,7 @@ fn main() {
 
     use glium::glutin;
     let mut events_loop = glium::glutin::EventsLoop::new();
-    let window = glium::glutin::WindowBuilder::new().with_decorations(false);
+    let window = glium::glutin::WindowBuilder::new().with_title("Mirror");
     let context = glium::glutin::ContextBuilder::new();
     let display = glium::Display::new(window, context, &events_loop).unwrap();
 

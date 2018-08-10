@@ -1,7 +1,11 @@
 [package]
 name = "uvc-rs"
+description = "Raw wrapper of libuvc"
 version = "0.1.0"
 authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
 
 [dependencies]
-uvc-sys = { path = "uvc-sys" }
+uvc-sys = { version = "^0.1.0", path = "uvc-sys" }
+
+[dev-dependencies]
+glium = "^0.22.0"

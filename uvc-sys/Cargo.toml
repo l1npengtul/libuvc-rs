@@ -1,7 +1,10 @@
 [package]
 name = "uvc-sys"
+description = "Safe and ergonomic wrapper around libuvc, allowing capture of webcam streams"
 version = "0.1.0"
 authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
+links = "uvc"
+build = "build.rs"
 
 [build-dependencies]
-bindgen = "*"
+bindgen = "^0.37.0"

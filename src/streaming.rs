@@ -23,8 +23,8 @@ struct Vtable<U> {
     data: U,
 }
 
-unsafe impl<'a, 'b, U: Send + Sync> Send for ActiveStream<'a, 'b, U> {}
-unsafe impl<'a, 'b, U: Send + Sync> Sync for ActiveStream<'a, 'b, U> {}
+unsafe impl<'a, 'b, U: 'b + Send + Sync> Send for ActiveStream<'a, 'b, U> {}
+unsafe impl<'a, 'b, U: 'b + Send + Sync> Sync for ActiveStream<'a, 'b, U> {}
 #[derive(Debug)]
 /// Active stream
 ///

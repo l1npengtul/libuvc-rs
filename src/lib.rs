@@ -2,7 +2,7 @@
     Safe wrapper around `libuvc`
 
     This crate gives access to webcams connected to the computer,
-    allowing one to stream video from this.
+    allowing one to stream and capture video.
 
     # How to use this crate
 
@@ -29,7 +29,7 @@
         let devh = dev.open().expect("Could not open device");
 
         // Most webcams support this format
-        let format = StreamFormat {
+        let format = uvc_rs::StreamFormat {
             width: 640,
             height: 480,
             fps: 30,
@@ -61,11 +61,11 @@
         // Explicitly stop the stream
         // The stream would also be stopped
         // when going out of scope (dropped)
-        stream.stop()
+        stream.stop();
         println!("Counter: {}", counter.load(Ordering::SeqCst));
     }
     ```
-    See also `cammy` to get an example of how to capture and display a stream
+    See also `mirror.rs` in the examples to get an example of how to capture and display a stream
   */
 extern crate uvc_sys;
 
