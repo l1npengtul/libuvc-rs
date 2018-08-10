@@ -2,3 +2,5 @@
 **/*.rs.bk
 /uvc-sys/target
 /cammy/target
+/Cargo.lock
+/uvc-sys/Cargo.lock

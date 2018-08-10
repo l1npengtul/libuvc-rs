@@ -2,7 +2,7 @@ use uvc_sys::*;
 
 #[derive(Debug, Copy, Clone)]
 /// Format one can request a stream to produce
-pub struct Format {
+pub struct StreamFormat {
     pub width: u32,
     pub height: u32,
     pub fps: u32,

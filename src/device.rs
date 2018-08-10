@@ -1,6 +1,3 @@
-use streaming;
-use uvc_sys::*;
-
 use std;
 use std::ffi::CStr;
 use std::marker::PhantomData;
@@ -9,7 +6,9 @@ use std::slice;
 use std::time::Duration;
 
 use error::{Error, Result};
-use formats::{Format, FrameFormat};
+use formats::{FrameFormat, StreamFormat};
+use streaming::StreamHandle;
+use uvc_sys::*;
 
 unsafe impl<'a> Send for DeviceList<'a> {}
 unsafe impl<'a> Sync for DeviceList<'a> {}
@@ -104,8 +103,8 @@ impl<'a> Device<'a> {
                 return Err(err);
             }
 
-            let id_vendor = (*desc).idVendor;
-            let id_product = (*desc).idProduct;
+            let vendor_id = (*desc).idVendor;
+            let product_id = (*desc).idProduct;
             let bcd_uvc = (*desc).bcdUVC;
 
             let serial_number_c_str = (*desc).serialNumber;
@@ -142,8 +141,8 @@ impl<'a> Device<'a> {
                 )
             };
             let descp = Ok(DeviceDescription {
-                id_vendor,
-                id_product,
+                vendor_id,
+                product_id,
                 bcd_uvc,
                 serial_number,
                 manufacturer,
@@ -176,7 +175,7 @@ pub struct DeviceHandle<'a> {
     _devh: PhantomData<&'a uvc_device_handle>,
 }
 
-impl<'a> DeviceHandle<'a> {
+impl<'a, 'b> DeviceHandle<'a> {
     /// List all supported formats
     pub fn supported_formats(&self) -> FormatDescriptors<'a> {
         unsafe {
@@ -189,17 +188,18 @@ impl<'a> DeviceHandle<'a> {
         }
     }
 
-    /// Iterates over all available formats to select the best format
-    /// f should compare (x, y) and return the preferred format
-    pub fn get_preferred_format<F>(&self, f: F) -> Option<Format>
+    /// Iterates over all available formats to select the best format.
+    ///
+    /// f should compare (x, y) and return the preferred format.
+    pub fn get_preferred_format<F>(&self, f: F) -> Option<StreamFormat>
     where
-        F: Fn(Format, Format) -> Format,
+        F: Fn(StreamFormat, StreamFormat) -> StreamFormat,
     {
         let mut pref_format = None;
         for i in self.supported_formats() {
             for j in i.supported_formats() {
                 for k in j.intervals() {
-                    let format = Format {
+                    let format = StreamFormat {
                         width: u32::from(j.width()),
                         height: u32::from(j.height()),
                         fps: 10_000_000 / *k,
@@ -220,18 +220,18 @@ impl<'a> DeviceHandle<'a> {
     }
 
     /// Creates a stream handle
-    pub fn get_stream_ctrl_with_format_size_and_fps(
-        &self,
+    pub fn get_stream_handle_with_format_size_and_fps(
+        &'a self,
         format: FrameFormat,
         width: u32,
         height: u32,
         fps: u32,
-    ) -> Result<streaming::StreamCtrl<'a>> {
+    ) -> Result<StreamHandle<'a, 'b>> {
         unsafe {
-            let mut ctrl = std::mem::uninitialized();
+            let mut handle = std::mem::uninitialized();
             let err = uvc_get_stream_ctrl_format_size(
                 self.devh.as_ptr(),
-                &mut ctrl,
+                &mut handle,
                 format.into(),
                 width as i32,
                 height as i32,
@@ -240,17 +240,21 @@ impl<'a> DeviceHandle<'a> {
             if err != Error::Success {
                 Err(err)
             } else {
-                Ok(::StreamCtrl {
-                    ctrl,
-                    _ctrl: PhantomData,
+                Ok(StreamHandle {
+                    handle,
+                    devh: self,
+                    _ph: PhantomData,
                 })
             }
         }
     }
 
     /// Creates a stream handle
-    pub fn get_stream_ctrl_with_format(&self, format: Format) -> Result<streaming::StreamCtrl<'a>> {
-        self.get_stream_ctrl_with_format_size_and_fps(
+    pub fn get_stream_handle_with_format(
+        &'a self,
+        format: StreamFormat,
+    ) -> Result<StreamHandle<'a, 'b>> {
+        self.get_stream_handle_with_format_size_and_fps(
             format.format,
             format.width,
             format.height,
@@ -270,8 +274,8 @@ impl<'a> Drop for DeviceHandle<'a> {
 #[derive(Debug)]
 /// Describes the device
 pub struct DeviceDescription {
-    pub id_vendor: u16,
-    pub id_product: u16,
+    pub vendor_id: u16,
+    pub product_id: u16,
     pub bcd_uvc: u16,
     pub serial_number: Option<String>,
     pub manufacturer: Option<String>,

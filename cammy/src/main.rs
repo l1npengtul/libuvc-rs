@@ -47,8 +47,8 @@ fn main() {
         "Found device: Bus {:03} Device {:03} : ID {:04}:{:04} {} ({})",
         dev.bus_number(),
         dev.device_address(),
-        description.id_vendor,
-        description.id_product,
+        description.vendor_id,
+        description.product_id,
         description.product.unwrap_or_else(|| "Unknown".to_owned()),
         description
             .manufacturer
@@ -71,11 +71,22 @@ fn main() {
         }).unwrap();
 
     println!("Best format found: {:?}", format);
-    let mut ctrl = devh.get_stream_ctrl_with_format(format).unwrap();
+    let mut streamh = devh.get_stream_handle_with_format(format).unwrap();
+
+    println!(
+            "Scanning mode: {:?}\nAuto-exposure mode: {:?}\nAuto-exposure priority: {:?}\nAbsolute exposure: {:?}\nRelative exposure: {:?}\nAboslute focus: {:?}\nRelative focus: {:?}",
+            devh.scanning_mode(),
+            devh.ae_mode(),
+            devh.ae_priority(),
+            devh.exposure_abs(),
+            devh.exposure_rel(),
+            devh.focus_abs(),
+            devh.focus_rel(),
+        );
 
     let frame = Arc::new(Mutex::new(None));
-    let _stream = ctrl
-        .start_streaming(&devh, callback_frame_to_image, frame.clone())
+    let _stream = streamh
+        .start_stream(callback_frame_to_image, frame.clone())
         .unwrap();
 
     use glium::glutin;
@@ -179,15 +190,5 @@ fn main() {
         }
 
         target.finish().unwrap();
-        println!(
-            "scan: {:?} ae: {:?} ae_pri: {:?} exp(abs): {:?} exp(rel): {:?} focus(abs): {:?} focus(rel) {:?}",
-            devh.scanning_mode(),
-            devh.ae_mode(),
-            devh.ae_priority(),
-            devh.exposure_abs(),
-            devh.exposure_rel(),
-            devh.focus_abs(),
-            devh.focus_rel(),
-        );
     }
 }
