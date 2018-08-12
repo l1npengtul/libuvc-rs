@@ -7,7 +7,7 @@ license = "MIT"
 repository = "https://github.com/mulimoen/libuvc-rs.git"
 
 [dependencies]
-uvc-sys = { version = "^0.1.0", path = "uvc-sys" }
+uvc-sys = "0.1.0"
 
 [dev-dependencies]
 glium = "^0.22.0"
