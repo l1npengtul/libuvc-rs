@@ -7,7 +7,7 @@
     # How to use this crate
 
     ```no_run
-    extern crate uvc_rs;
+    extern crate uvc;
 
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
@@ -15,7 +15,7 @@
 
     fn main() {
         // Get a libuvc context
-        let ctx = uvc_rs::Context::new().expect("Could not get context");
+        let ctx = uvc::Context::new().expect("Could not get context");
 
         // Get a default device
         let dev = ctx
@@ -29,11 +29,11 @@
         let devh = dev.open().expect("Could not open device");
 
         // Most webcams support this format
-        let format = uvc_rs::StreamFormat {
+        let format = uvc::StreamFormat {
             width: 640,
             height: 480,
             fps: 30,
-            format: uvc_rs::FrameFormat::YUYV,
+            format: uvc::FrameFormat::YUYV,
         };
 
         // Get the necessary stream information

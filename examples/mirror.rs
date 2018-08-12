@@ -1,12 +1,12 @@
 #[macro_use]
 extern crate glium;
-extern crate uvc_rs;
+extern crate uvc;
 
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 
 use glium::Surface;
-use uvc_rs::{Context, Frame};
+use uvc::{Context, Frame};
 
 fn frame_to_raw_image(
     frame: &Frame,

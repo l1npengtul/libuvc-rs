@@ -1,8 +1,9 @@
 [package]
-name = "uvc-rs"
+name = "uvc"
 description = "Raw wrapper of libuvc"
 version = "0.1.0"
 authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
+license = "MIT"
 
 [dependencies]
 uvc-sys = { version = "^0.1.0", path = "uvc-sys" }

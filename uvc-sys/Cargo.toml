@@ -5,6 +5,7 @@ version = "0.1.0"
 authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
 links = "uvc"
 build = "build.rs"
+license = "MIT"
 
 [build-dependencies]
 bindgen = "^0.37.0"
