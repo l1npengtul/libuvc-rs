@@ -4,6 +4,7 @@ description = "Raw wrapper of libuvc"
 version = "0.1.0"
 authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
 license = "MIT"
+repository = "https://github.com/mulimoen/libuvc-rs.git"
 
 [dependencies]
 uvc-sys = { version = "^0.1.0", path = "uvc-sys" }
