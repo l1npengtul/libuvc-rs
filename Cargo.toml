@@ -1,6 +1,6 @@
 [package]
 name = "uvc"
-description = "Raw wrapper of libuvc"
+description = "Safe and ergonomic wrapper around libuvc, allowing capture of webcam streams"
 version = "0.1.0"
 authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
 license = "MIT"
