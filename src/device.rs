@@ -47,7 +47,7 @@ impl<'a> Iterator for DeviceList<'a> {
             return None;
         }
 
-        let item = unsafe { self.list.as_ptr().offset(self.index as isize) };
+        let item = unsafe { self.list.as_ptr().add(self.index) };
         if item.is_null() {
             self.reached_end = true;
             return None;
@@ -395,9 +395,9 @@ impl<'a> FrameDescriptor<'a> {
             let intervals = (*self.frame_desc.as_ptr()).intervals;
             let mut len = 0;
             loop {
-                let x = *intervals.offset(len);
+                let x = *intervals.add(len);
                 if x == 0 {
-                    return slice::from_raw_parts::<'a>(intervals, len as usize);
+                    return slice::from_raw_parts::<'a>(intervals, len);
                 }
                 len += 1;
             }
