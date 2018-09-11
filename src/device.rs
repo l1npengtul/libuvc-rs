@@ -226,7 +226,7 @@ impl<'a, 'b> DeviceHandle<'a> {
         width: u32,
         height: u32,
         fps: u32,
-    ) -> Result<StreamHandle<'a, 'b>> {
+    ) -> Result<StreamHandle<'a>> {
         unsafe {
             let mut handle = std::mem::uninitialized();
             let err = uvc_get_stream_ctrl_format_size(
@@ -240,11 +240,7 @@ impl<'a, 'b> DeviceHandle<'a> {
             if err != Error::Success {
                 Err(err)
             } else {
-                Ok(StreamHandle {
-                    handle,
-                    devh: self,
-                    _ph: PhantomData,
-                })
+                Ok(StreamHandle { handle, devh: self })
             }
         }
     }
@@ -253,7 +249,7 @@ impl<'a, 'b> DeviceHandle<'a> {
     pub fn get_stream_handle_with_format(
         &'a self,
         format: StreamFormat,
-    ) -> Result<StreamHandle<'a, 'b>> {
+    ) -> Result<StreamHandle<'a>> {
         self.get_stream_handle_with_format_size_and_fps(
             format.format,
             format.width,

@@ -5,17 +5,15 @@ use error::{Error, Result};
 use frame::Frame;
 
 use std;
-use std::marker::PhantomData;
 use std::os::raw::c_void;
 
-unsafe impl<'a, 'b> Send for StreamHandle<'a, 'b> {}
-unsafe impl<'a, 'b> Sync for StreamHandle<'a, 'b> {}
+unsafe impl<'a> Send for StreamHandle<'a> {}
+unsafe impl<'a> Sync for StreamHandle<'a> {}
 #[derive(Debug)]
 /// Stream handle
-pub struct StreamHandle<'a, 'b> {
+pub struct StreamHandle<'a> {
     pub(crate) handle: uvc_stream_ctrl_t,
     pub(crate) devh: &'a DeviceHandle<'a>,
-    pub(crate) _ph: PhantomData<&'b mut uvc_stream_ctrl_t>,
 }
 
 struct Vtable<U> {
@@ -23,27 +21,26 @@ struct Vtable<U> {
     data: U,
 }
 
-unsafe impl<'a, 'b, U: 'b + Send + Sync> Send for ActiveStream<'a, 'b, U> {}
-unsafe impl<'a, 'b, U: 'b + Send + Sync> Sync for ActiveStream<'a, 'b, U> {}
+unsafe impl<'a, U: Send + Sync> Send for ActiveStream<'a, U> {}
+unsafe impl<'a, U: Send + Sync> Sync for ActiveStream<'a, U> {}
 #[derive(Debug)]
 /// Active stream
 ///
 /// Dropping this stream will stop the stream
-pub struct ActiveStream<'a, 'b, U: 'b + Send + Sync> {
+pub struct ActiveStream<'a, U: Send + Sync> {
     devh: &'a ::DeviceHandle<'a>,
     #[allow(unused)]
     vtable: *mut Vtable<U>,
-    _ph: PhantomData<&'b Vtable<U>>,
 }
 
-impl<'a, 'b, U: 'b + Send + Sync> ActiveStream<'a, 'b, U> {
+impl<'a, U: Send + Sync> ActiveStream<'a, U> {
     /// Stop the stream
     pub fn stop(self) {
         // Taking ownership of the stream, which drops it
     }
 }
 
-impl<'a, 'b, U: 'b + Send + Sync> Drop for ActiveStream<'a, 'b, U> {
+impl<'a, U: Send + Sync> Drop for ActiveStream<'a, U> {
     fn drop(&mut self) {
         unsafe {
             uvc_stop_streaming(self.devh.devh.as_ptr());
@@ -83,11 +80,11 @@ where
     }
 }
 
-impl<'a, 'b> StreamHandle<'a, 'b> {
+impl<'a> StreamHandle<'a> {
     /// Begin a stream, use the callback to save the frames
     ///
     /// This function is non-blocking
-    pub fn start_stream<F, U>(&'a mut self, cb: F, user_data: U) -> Result<ActiveStream<'a, 'b, U>>
+    pub fn start_stream<F, U>(&'a mut self, cb: F, user_data: U) -> Result<ActiveStream<'a, U>>
     where
         F: 'static + Send + Sync + Fn(&Frame, &mut U),
         U: 'static + Send + Sync,
@@ -113,7 +110,6 @@ impl<'a, 'b> StreamHandle<'a, 'b> {
                 Ok(ActiveStream {
                     devh: self.devh,
                     vtable: tuple,
-                    _ph: PhantomData,
                 })
             }
         }
