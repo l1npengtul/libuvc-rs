@@ -1,16 +1,17 @@
 [package]
 name = "uvc"
 description = "Safe and ergonomic wrapper around libuvc, allowing capture of webcam streams"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
 license = "MIT"
 repository = "https://github.com/mulimoen/libuvc-rs.git"
 categories = ["api-bindings", "multimedia::video"]
 keywords = ["webcam", "capture", "camera"]
 readme = "README.md"
+edition = "2018"
 
 [dependencies]
-uvc-sys = "^0.1.1"
+uvc-sys = "^0.1.2"
 
 [dev-dependencies]
 glium = "^0.22.0"

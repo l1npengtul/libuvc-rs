@@ -1,10 +1,9 @@
 use uvc_sys::*;
 
-use device::DeviceHandle;
-use error::{Error, Result};
-use frame::Frame;
+use crate::device::DeviceHandle;
+use crate::error::{Error, Result};
+use crate::frame::Frame;
 
-use std;
 use std::os::raw::c_void;
 
 unsafe impl<'a> Send for StreamHandle<'a> {}
@@ -28,7 +27,7 @@ unsafe impl<'a, U: Send + Sync> Sync for ActiveStream<'a, U> {}
 ///
 /// Dropping this stream will stop the stream
 pub struct ActiveStream<'a, U: Send + Sync> {
-    devh: &'a ::DeviceHandle<'a>,
+    devh: &'a crate::DeviceHandle<'a>,
     #[allow(unused)]
     vtable: *mut Vtable<U>,
 }
@@ -103,7 +102,8 @@ impl<'a> StreamHandle<'a> {
                 Some(trampoline::<F, U>),
                 tuple as *mut c_void,
                 0,
-            ).into();
+            )
+            .into();
             if err != Error::Success {
                 Err(err)
             } else {

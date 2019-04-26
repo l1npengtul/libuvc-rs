@@ -1,10 +1,9 @@
-use error::{Error, Result};
-
-use std;
 use std::ptr::NonNull;
 use std::slice;
 
-use formats::FrameFormat;
+use crate::error::{Error, Result};
+use crate::formats::FrameFormat;
+
 use uvc_sys::*;
 
 unsafe impl Send for Frame {}
@@ -43,7 +42,8 @@ impl Frame {
                 FrameFormat::Any => uvc_any2rgb(self.frame.as_ptr(), new_frame.frame.as_ptr()),
                 _ => uvc_any2rgb(self.frame.as_ptr(), new_frame.frame.as_ptr()),
             }
-        }.into();
+        }
+        .into();
 
         if err != Error::Success {
             Err(err)
@@ -63,7 +63,8 @@ impl Frame {
                 FrameFormat::Any => uvc_any2bgr(self.frame.as_ptr(), new_frame.frame.as_ptr()),
                 _ => uvc_any2bgr(self.frame.as_ptr(), new_frame.frame.as_ptr()),
             }
-        }.into();
+        }
+        .into();
 
         if err != Error::Success {
             Err(err)

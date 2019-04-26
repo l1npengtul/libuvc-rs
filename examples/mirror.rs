@@ -1,6 +1,4 @@
-#[macro_use]
-extern crate glium;
-extern crate uvc;
+use glium::{implement_vertex, uniform};
 
 use std::error::Error;
 use std::sync::{Arc, Mutex};
@@ -68,7 +66,8 @@ fn main() {
             } else {
                 y
             }
-        }).unwrap();
+        })
+        .unwrap();
 
     println!("Best format found: {:?}", format);
     let mut streamh = devh.get_stream_handle_with_format(format).unwrap();
@@ -145,7 +144,8 @@ fn main() {
         &display,
         glium::index::PrimitiveType::TrianglesList,
         &indices,
-    ).unwrap();
+    )
+    .unwrap();
     let program =
         glium::Program::from_source(&display, vertex_shader_source, fragment_shader_source, None)
             .unwrap();
@@ -186,7 +186,8 @@ fn main() {
                     &program,
                     &uniforms,
                     &Default::default(),
-                ).unwrap();
+                )
+                .unwrap();
         }
 
         target.finish().unwrap();

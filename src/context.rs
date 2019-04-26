@@ -1,7 +1,7 @@
 use uvc_sys::*;
 
-use device::{Device, DeviceList};
-use error::{Error, Result};
+use crate::device::{Device, DeviceList};
+use crate::error::{Error, Result};
 
 use std;
 use std::ffi::CString;
@@ -73,7 +73,8 @@ impl<'a> Context<'a> {
                 vendor_id.unwrap_or(0),
                 product_id.unwrap_or(0),
                 cstr.map_or(std::ptr::null(), |v| v.as_ptr()),
-            ).into();
+            )
+            .into();
             if err != Error::Success {
                 return Err(err);
             }

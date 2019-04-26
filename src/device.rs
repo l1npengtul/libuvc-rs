@@ -5,9 +5,9 @@ use std::ptr::NonNull;
 use std::slice;
 use std::time::Duration;
 
-use error::{Error, Result};
-use formats::{FrameFormat, StreamFormat};
-use streaming::StreamHandle;
+use crate::error::{Error, Result};
+use crate::formats::{FrameFormat, StreamFormat};
+use crate::streaming::StreamHandle;
 use uvc_sys::*;
 
 unsafe impl<'a> Send for DeviceList<'a> {}
@@ -236,7 +236,8 @@ impl<'a, 'b> DeviceHandle<'a> {
                 width as i32,
                 height as i32,
                 fps as i32,
-            ).into();
+            )
+            .into();
             if err != Error::Success {
                 Err(err)
             } else {

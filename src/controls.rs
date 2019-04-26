@@ -1,7 +1,5 @@
-use std;
-
-use device::DeviceHandle;
-use error::{Error, Result};
+use crate::device::DeviceHandle;
+use crate::error::{Error, Result};
 use uvc_sys::*;
 
 #[derive(Copy, Clone, Debug)]
@@ -119,7 +117,8 @@ impl<'a> DeviceHandle<'a> {
                 &mut focus_rel,
                 &mut speed,
                 uvc_req_code_UVC_GET_CUR,
-            ).into();
+            )
+            .into();
             if err != Error::Success {
                 Err(err)
             } else {
