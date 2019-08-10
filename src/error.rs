@@ -87,8 +87,8 @@ impl fmt::Display for Error {
         write!(f, "{}", strerr)
     }
 }
-impl ::std::error::Error for Error {
-    fn cause(&self) -> Option<&::std::error::Error> {
+impl std::error::Error for Error {
+    fn cause(&self) -> Option<&dyn std::error::Error> {
         None
     }
 }

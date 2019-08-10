@@ -1,7 +1,7 @@
 [package]
 name = "uvc"
 description = "Safe and ergonomic wrapper around libuvc, allowing capture of webcam streams"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
 license = "MIT"
 repository = "https://github.com/mulimoen/libuvc-rs.git"
