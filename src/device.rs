@@ -83,11 +83,11 @@ impl<'a> Device<'a> {
     /// Create handle to a device
     pub fn open(&'a self) -> Result<DeviceHandle<'a>> {
         unsafe {
-            let mut devh = std::mem::uninitialized();
-            let err = uvc_open(self.dev.as_ptr(), &mut devh).into();
+            let mut devh = std::mem::MaybeUninit::uninit();
+            let err = uvc_open(self.dev.as_ptr(), devh.as_mut_ptr()).into();
             match err {
                 Error::Success => Ok(DeviceHandle {
-                    devh: NonNull::new(devh).unwrap(),
+                    devh: NonNull::new(devh.assume_init()).unwrap(),
                     _devh: PhantomData,
                 }),
                 err => Err(err),
@@ -97,11 +97,13 @@ impl<'a> Device<'a> {
     /// Get the description of a device
     pub fn description(&self) -> Result<DeviceDescription> {
         unsafe {
-            let mut desc = std::mem::uninitialized();
-            let err = uvc_get_device_descriptor(self.dev.as_ptr(), &mut desc).into();
+            let mut desc = std::mem::MaybeUninit::uninit();
+            let err = uvc_get_device_descriptor(self.dev.as_ptr(), desc.as_mut_ptr()).into();
             if err != Error::Success {
                 return Err(err);
             }
+
+            let desc = desc.assume_init();
 
             let vendor_id = (*desc).idVendor;
             let product_id = (*desc).idProduct;
@@ -228,10 +230,10 @@ impl<'a, 'b> DeviceHandle<'a> {
         fps: u32,
     ) -> Result<StreamHandle<'a>> {
         unsafe {
-            let mut handle = std::mem::uninitialized();
+            let mut handle = std::mem::MaybeUninit::uninit();
             let err = uvc_get_stream_ctrl_format_size(
                 self.devh.as_ptr(),
-                &mut handle,
+                handle.as_mut_ptr(),
                 format.into(),
                 width as i32,
                 height as i32,
@@ -241,7 +243,10 @@ impl<'a, 'b> DeviceHandle<'a> {
             if err != Error::Success {
                 Err(err)
             } else {
-                Ok(StreamHandle { handle, devh: self })
+                Ok(StreamHandle {
+                    handle: handle.assume_init(),
+                    devh: self,
+                })
             }
         }
     }

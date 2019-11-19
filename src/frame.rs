@@ -106,13 +106,13 @@ impl Frame {
     /// Clones a frame
     pub fn duplicate(&self) -> Result<Frame> {
         unsafe {
-            let new_frame = std::mem::uninitialized();
+            let mut new_frame = Frame::from_raw(uvc_allocate_frame(0));
 
-            let err = uvc_duplicate_frame(self.frame.as_ptr(), new_frame).into();
+            let err = uvc_duplicate_frame(self.frame.as_ptr(), new_frame.frame.as_mut()).into();
             if err != Error::Success {
                 return Err(err);
             }
-            Ok(Frame::from_raw(new_frame))
+            Ok(new_frame)
         }
     }
 }
