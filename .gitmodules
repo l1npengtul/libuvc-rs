@@ -1,0 +1,3 @@
+[submodule "uvc-src/source"]
+	path = uvc-src/source
+	url = https://github.com/libuvc/libuvc.git

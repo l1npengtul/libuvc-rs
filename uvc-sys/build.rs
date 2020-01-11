@@ -13,6 +13,6 @@ fn main() {
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings
-        .write_to_file(out_path.join("bindings.rs"))
+        .write_to_file(out_path.join("uvc_bindings.rs"))
         .expect("Failed to write bindings");
 }

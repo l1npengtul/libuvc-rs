@@ -65,7 +65,10 @@
   ```
   See also `mirror.rs` in the examples to get an example of how to capture and display a stream
 */
-extern crate uvc_sys;
+#[cfg(feature = "vendor")]
+pub(crate) use uvc_src as uvc_sys;
+#[cfg(feature = "system")]
+pub(crate) use uvc_sys;
 
 mod context;
 mod controls;
