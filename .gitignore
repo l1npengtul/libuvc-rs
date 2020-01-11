@@ -4,3 +4,5 @@
 /cammy/target
 /Cargo.lock
 /uvc-sys/Cargo.lock
+/uvc-src/Cargo.lock
+/uvc-src/target
