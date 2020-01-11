@@ -153,12 +153,12 @@ fn main() {
     let mut closed = false;
     let mut buffer: Option<glium::texture::SrgbTexture2d> = None;
     while !closed {
-        events_loop.poll_events(|ev| match ev {
-            glutin::Event::WindowEvent { event, .. } => match event {
-                glutin::WindowEvent::CloseRequested => closed = true,
-                _ => {}
-            },
-            _ => {}
+        events_loop.poll_events(|ev| {
+            if let glutin::Event::WindowEvent { event, .. } = ev {
+                if let glutin::WindowEvent::CloseRequested = event {
+                    closed = true
+                }
+            }
         });
 
         let mut target = display.draw();
