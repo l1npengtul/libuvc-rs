@@ -1,4 +1,3 @@
-use std;
 use std::ffi::CStr;
 use std::marker::PhantomData;
 use std::ptr::NonNull;
@@ -158,11 +157,13 @@ impl<'a> Device<'a> {
     }
 
     /// Bus number of which this device is connected
+    #[must_use]
     pub fn bus_number(&self) -> u8 {
         unsafe { uvc_get_bus_number(self.dev.as_ptr()) }
     }
 
     /// Device address within the bus
+    #[must_use]
     pub fn device_address(&self) -> u8 {
         unsafe { uvc_get_device_address(self.dev.as_ptr()) }
     }
@@ -179,6 +180,7 @@ pub struct DeviceHandle<'a> {
 
 impl<'a, 'b> DeviceHandle<'a> {
     /// List all supported formats
+    #[must_use]
     pub fn supported_formats(&self) -> FormatDescriptors<'a> {
         unsafe {
             let format_descs = uvc_get_format_descs(self.devh.as_ptr());
@@ -240,13 +242,13 @@ impl<'a, 'b> DeviceHandle<'a> {
                 fps as i32,
             )
             .into();
-            if err != Error::Success {
-                Err(err)
-            } else {
+            if err == Error::Success {
                 Ok(StreamHandle {
                     handle: handle.assume_init(),
                     devh: self,
                 })
+            } else {
+                Err(err)
             }
         }
     }
@@ -337,6 +339,7 @@ impl From<uvc_vs_desc_subtype> for DescriptionSubtype {
 }
 
 impl<'a> FormatDescriptor<'a> {
+    #[must_use]
     pub fn supported_formats(&self) -> FrameDescriptors {
         FrameDescriptors {
             head: unsafe { (*self.format_desc.as_ptr()).frame_descs },
@@ -344,6 +347,7 @@ impl<'a> FormatDescriptor<'a> {
         }
     }
 
+    #[must_use]
     pub fn subtype(&self) -> DescriptionSubtype {
         unsafe { (*self.format_desc.as_ptr()).bDescriptorSubtype }.into()
     }
@@ -351,7 +355,7 @@ impl<'a> FormatDescriptor<'a> {
 
 unsafe impl<'a> Send for FormatDescriptors<'a> {}
 unsafe impl<'a> Sync for FormatDescriptors<'a> {}
-/// Iterate to get a FormatDescriptor
+/// Iterate to get a `FormatDescriptor`
 pub struct FormatDescriptors<'a> {
     head: *const uvc_format_desc_t,
     _ph: PhantomData<&'a uvc_format_desc_t>,
@@ -385,17 +389,21 @@ pub struct FrameDescriptor<'a> {
 }
 
 impl<'a> FrameDescriptor<'a> {
+    #[must_use]
     pub fn width(&self) -> u16 {
         unsafe { (*self.frame_desc.as_ptr()).wWidth }
     }
+    #[must_use]
     pub fn height(&self) -> u16 {
         unsafe { (*self.frame_desc.as_ptr()).wHeight }
     }
     /// Type of frame
+    #[must_use]
     pub fn subtype(&self) -> DescriptionSubtype {
         unsafe { (*self.frame_desc.as_ptr()).bDescriptorSubtype }.into()
     }
     /// Time in 100ns
+    #[must_use]
     pub fn intervals(&self) -> &[u32] {
         unsafe {
             let intervals = (*self.frame_desc.as_ptr()).intervals;
@@ -411,6 +419,7 @@ impl<'a> FrameDescriptor<'a> {
     }
 
     /// Duration between captures
+    #[must_use]
     pub fn intervals_duration(&self) -> Vec<Duration> {
         let times = self.intervals();
         let mut durations = Vec::with_capacity(times.len());
@@ -425,7 +434,7 @@ impl<'a> FrameDescriptor<'a> {
 
 unsafe impl<'a> Send for FrameDescriptors<'a> {}
 unsafe impl<'a> Sync for FrameDescriptors<'a> {}
-/// Iterate to get a FrameDescriptor
+/// Iterate to get a `FrameDescriptor`
 pub struct FrameDescriptors<'a> {
     head: *mut uvc_frame_desc_t,
     _ph: PhantomData<&'a uvc_frame_desc_t>,

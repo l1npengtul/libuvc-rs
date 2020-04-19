@@ -91,10 +91,10 @@ impl<'a> DeviceHandle<'a> {
                 uvc_req_code_UVC_GET_CUR,
             )
             .into();
-            if err != Error::Success {
-                Err(err)
-            } else {
+            if err == Error::Success {
                 Ok(time.assume_init())
+            } else {
+                Err(err)
             }
         }
     }
@@ -107,10 +107,10 @@ impl<'a> DeviceHandle<'a> {
                 uvc_req_code_UVC_GET_CUR,
             )
             .into();
-            if err != Error::Success {
-                Err(err)
-            } else {
+            if err == Error::Success {
                 Ok(step.assume_init())
+            } else {
+                Err(err)
             }
         }
     }
@@ -123,10 +123,10 @@ impl<'a> DeviceHandle<'a> {
                 uvc_req_code_UVC_GET_CUR,
             )
             .into();
-            if err != Error::Success {
-                Err(err)
-            } else {
+            if err == Error::Success {
                 Ok(focus.assume_init())
+            } else {
+                Err(err)
             }
         }
     }
@@ -141,10 +141,10 @@ impl<'a> DeviceHandle<'a> {
                 uvc_req_code_UVC_GET_CUR,
             )
             .into();
-            if err != Error::Success {
-                Err(err)
-            } else {
+            if err == Error::Success {
                 Ok((focus_rel.assume_init(), speed.assume_init()))
+            } else {
+                Err(err)
             }
         }
     }

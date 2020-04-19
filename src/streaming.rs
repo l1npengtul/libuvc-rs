@@ -104,13 +104,13 @@ impl<'a> StreamHandle<'a> {
                 0,
             )
             .into();
-            if err != Error::Success {
-                Err(err)
-            } else {
+            if err == Error::Success {
                 Ok(ActiveStream {
                     devh: self.devh,
                     vtable: tuple,
                 })
+            } else {
+                Err(err)
             }
         }
     }

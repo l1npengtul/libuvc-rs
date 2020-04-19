@@ -45,10 +45,10 @@ impl Frame {
         }
         .into();
 
-        if err != Error::Success {
-            Err(err)
-        } else {
+        if err == Error::Success {
             Ok(new_frame)
+        } else {
+            Err(err)
         }
     }
 
@@ -66,14 +66,15 @@ impl Frame {
         }
         .into();
 
-        if err != Error::Success {
-            Err(err)
-        } else {
+        if err == Error::Success {
             Ok(new_frame)
+        } else {
+            Err(err)
         }
     }
 
     /// Get the raw image data
+    #[must_use]
     pub fn to_bytes(&self) -> &[u8] {
         unsafe {
             slice::from_raw_parts(
@@ -84,21 +85,25 @@ impl Frame {
     }
 
     /// Width of the captured frame
+    #[must_use]
     pub fn width(&self) -> u32 {
-        unsafe { (*self.frame.as_ptr()) }.width
+        unsafe { *self.frame.as_ptr() }.width
     }
 
     /// Heigth of the captured frame
+    #[must_use]
     pub fn height(&self) -> u32 {
-        unsafe { (*self.frame.as_ptr()) }.height
+        unsafe { *self.frame.as_ptr() }.height
     }
 
     /// Format of the captured frame
+    #[must_use]
     pub fn format(&self) -> FrameFormat {
-        unsafe { (*self.frame.as_ptr()) }.frame_format.into()
+        unsafe { *self.frame.as_ptr() }.frame_format.into()
     }
 
     /// Monotonically increasing frame number
+    #[must_use]
     pub fn sequence(&self) -> u32 {
         unsafe { (*self.frame.as_ptr()).sequence }
     }

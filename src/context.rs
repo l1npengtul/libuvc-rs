@@ -31,13 +31,13 @@ impl<'a> Context<'a> {
         unsafe {
             let mut ctx = std::mem::MaybeUninit::<*mut uvc_context>::uninit();
             let err = uvc_init(ctx.as_mut_ptr(), std::ptr::null_mut()).into();
-            if err != Error::Success {
-                Err(err)
-            } else {
+            if err == Error::Success {
                 Ok(Context {
                     ctx: NonNull::new(ctx.assume_init()).unwrap(),
                     _ctx: PhantomData,
                 })
+            } else {
+                Err(err)
             }
         }
     }
