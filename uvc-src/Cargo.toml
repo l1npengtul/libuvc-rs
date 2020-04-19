@@ -12,4 +12,4 @@ description = "Vendored version of libuvc"
 
 [build-dependencies]
 cmake = "0.1.42"
-bindgen = "0.52.0"
+bindgen = "0.53.2"

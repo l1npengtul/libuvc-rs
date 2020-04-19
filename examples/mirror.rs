@@ -89,9 +89,9 @@ fn main() {
         .unwrap();
 
     use glium::glutin;
-    let mut events_loop = glium::glutin::EventsLoop::new();
-    let window = glium::glutin::WindowBuilder::new().with_title("Mirror");
-    let context = glium::glutin::ContextBuilder::new();
+    let events_loop = glutin::event_loop::EventLoop::new();
+    let window = glutin::window::WindowBuilder::new().with_title("Mirror");
+    let context = glutin::ContextBuilder::new();
     let display = glium::Display::new(window, context, &events_loop).unwrap();
 
     #[derive(Copy, Clone)]
@@ -150,16 +150,14 @@ fn main() {
         glium::Program::from_source(&display, vertex_shader_source, fragment_shader_source, None)
             .unwrap();
 
-    let mut closed = false;
     let mut buffer: Option<glium::texture::SrgbTexture2d> = None;
-    while !closed {
-        events_loop.poll_events(|ev| {
-            if let glutin::Event::WindowEvent { event, .. } = ev {
-                if let glutin::WindowEvent::CloseRequested = event {
-                    closed = true
-                }
+    events_loop.run(move |event, _, control_flow| {
+        if let glutin::event::Event::WindowEvent { event, .. } = event {
+            if let glutin::event::WindowEvent::CloseRequested = event {
+                *control_flow = glutin::event_loop::ControlFlow::Exit;
+                return;
             }
-        });
+        }
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 1.0, 1.0);
@@ -191,5 +189,5 @@ fn main() {
         }
 
         target.finish().unwrap();
-    }
+    });
 }

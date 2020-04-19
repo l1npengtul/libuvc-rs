@@ -11,4 +11,4 @@ categories = ["external-ffi-bindings", "multimedia::video"]
 edition = "2018"
 
 [build-dependencies]
-bindgen = "0.51.0"
+bindgen = "0.53.2"

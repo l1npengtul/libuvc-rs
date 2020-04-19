@@ -23,7 +23,7 @@ impl Frame {
 
     /// Does not initialize any data
     unsafe fn new_with_dimensions(width: u32, height: u32, components: u32) -> Self {
-        let frame = uvc_allocate_frame((width * height * components) as usize);
+        let frame = uvc_allocate_frame((width * height * components) as _);
 
         Frame {
             frame: NonNull::new(frame).unwrap(),
@@ -79,7 +79,7 @@ impl Frame {
         unsafe {
             slice::from_raw_parts(
                 (*self.frame.as_ptr()).data as *const u8,
-                (*self.frame.as_ptr()).data_bytes,
+                (*self.frame.as_ptr()).data_bytes as _,
             )
         }
     }
