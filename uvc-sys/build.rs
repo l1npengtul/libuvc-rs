@@ -8,6 +8,8 @@ fn main() {
 
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
+        .whitelist_function("uvc_.*")
+        .whitelist_type("uvc_.*")
         .generate()
         .expect("Failed to generate bindings");
 

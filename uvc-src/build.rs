@@ -14,6 +14,8 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .clang_arg(format!("-I{}/include", dst.display()))
         .header(format!("{}/include/libuvc/libuvc.h", dst.display()))
+        .whitelist_function("uvc_.*")
+        .whitelist_type("uvc_.*")
         .generate()
         .expect("Failed to generate bindings");
 
