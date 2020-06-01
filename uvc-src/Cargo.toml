@@ -1,6 +1,6 @@
 [package]
 name = "uvc-src"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
 edition = "2018"
 license-file = "source/LICENSE.txt"
@@ -11,5 +11,5 @@ description = "Vendored version of libuvc"
 [dependencies]
 
 [build-dependencies]
-cmake = "0.1.42"
-bindgen = "0.53.2"
+cmake = "0.1.44"
+bindgen = "0.54.0"

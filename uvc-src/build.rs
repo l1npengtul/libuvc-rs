@@ -5,6 +5,7 @@ fn main() {
     let dst = cmake::Config::new("source")
         .define("ENABLE_UVC_DEBUGGING", "OFF")
         .define("CMAKE_BUILD_TARGET", "Static")
+        .define("BUILD_EXAMPLE", "OFF")
         .build();
 
     println!("cargo:rustc-link-lib=static=uvc");
