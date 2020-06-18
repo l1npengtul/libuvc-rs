@@ -1,8 +1,5 @@
 fn main() {
     println!("cargo:rustc-link-lib=usb-1.0");
-    for env in std::env::vars() {
-        println!("{:?}", env);
-    }
 
     let jpeg_include = std::env::var_os("DEP_JPEG_INCLUDE").unwrap();
     let mut jpeg_paths = std::env::split_paths(&jpeg_include);
@@ -16,8 +13,8 @@ fn main() {
         .define("ENABLE_UVC_DEBUGGING", "OFF")
         .define("CMAKE_BUILD_TARGET", "Static")
         .define("BUILD_EXAMPLE", "OFF")
-        .define("DJPEG_LIBRARY_PATH:PATH", &jpeg_lib_path)
-        .define("DJPEG_INCLUDE_DIR:PATH", &jpeg_include)
+        .define("JPEG_LIBRARY_RELEASE:PATH", &jpeg_lib_path)
+        .define("JPEG_INCLUDE_DIRS:PATH", &jpeg_include)
         .build();
 
     println!("cargo:rustc-link-lib=static={}", jpeg_lib);
