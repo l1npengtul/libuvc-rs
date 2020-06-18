@@ -14,7 +14,9 @@ fn main() {
         .define("CMAKE_BUILD_TARGET", "Static")
         .define("BUILD_EXAMPLE", "OFF")
         .define("JPEG_LIBRARY_RELEASE:PATH", &jpeg_lib_path)
+        .define("JPEG_LIBRARY:PATH", &jpeg_lib_path)
         .define("JPEG_INCLUDE_DIRS:PATH", &jpeg_include)
+        .define("JPEG_INCLUDE_DIR:PATH", &jpeg_include)
         .build();
 
     println!("cargo:rustc-link-lib=static={}", jpeg_lib);
