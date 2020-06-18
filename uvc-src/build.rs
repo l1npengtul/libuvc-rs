@@ -1,13 +1,27 @@
 fn main() {
     println!("cargo:rustc-link-lib=usb-1.0");
-    println!("cargo:rustc-link-lib=jpeg");
+    for env in std::env::vars() {
+        println!("{:?}", env);
+    }
+
+    let jpeg_include = std::env::var_os("DEP_JPEG_INCLUDE").unwrap();
+    let mut jpeg_paths = std::env::split_paths(&jpeg_include);
+    let jpeg_include = jpeg_paths.next().unwrap();
+
+    let jpeg_version = std::env::var("DEP_JPEG_LIB_VERSION").unwrap();
+    let jpeg_lib_path = format!("{}/..", jpeg_include.to_str().unwrap(),);
+    let jpeg_lib = format!("mozjpeg{}", jpeg_version);
 
     let dst = cmake::Config::new("source")
         .define("ENABLE_UVC_DEBUGGING", "OFF")
         .define("CMAKE_BUILD_TARGET", "Static")
         .define("BUILD_EXAMPLE", "OFF")
+        .define("DJPEG_LIBRARY_PATH:PATH", &jpeg_lib_path)
+        .define("DJPEG_INCLUDE_DIR:PATH", &jpeg_include)
         .build();
 
+    println!("cargo:rustc-link-lib=static={}", jpeg_lib);
+    println!("cargo:rustc-link-search=native={}", jpeg_lib_path);
     println!("cargo:rustc-link-lib=static=uvc");
     println!("cargo:rustc-link-search=native={}/lib", dst.display());
 

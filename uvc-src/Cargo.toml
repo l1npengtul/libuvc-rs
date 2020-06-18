@@ -9,6 +9,7 @@ repository = "https://github.com/mulimoen/libuvc-rs"
 description = "Vendored version of libuvc"
 
 [dependencies]
+mozjpeg-sys = "0.10.4"
 
 [build-dependencies]
 cmake = "0.1.44"
