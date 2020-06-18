@@ -8,6 +8,7 @@ fn main() {
     let jpeg_version = std::env::var("DEP_JPEG_LIB_VERSION").unwrap();
     let jpeg_lib_path = format!("{}/..", jpeg_include.to_str().unwrap(),);
     let jpeg_lib = format!("mozjpeg{}", jpeg_version);
+    let jpeg_include = jpeg_paths.next().unwrap();
 
     let dst = cmake::Config::new("source")
         .define("ENABLE_UVC_DEBUGGING", "OFF")
