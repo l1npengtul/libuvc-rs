@@ -8,7 +8,7 @@ fn main() {
     let jpeg_version = std::env::var("DEP_JPEG_LIB_VERSION").unwrap();
     let jpeg_lib_path = format!("{}/..", jpeg_include.to_str().unwrap(),);
     let jpeg_lib = format!("mozjpeg{}", jpeg_version);
-    let jpeg_include = jpeg_paths.next().unwrap();
+    let jpeg_include2 = jpeg_paths.next().unwrap();
 
     let dst = cmake::Config::new("source")
         .define("ENABLE_UVC_DEBUGGING", "OFF")
@@ -16,8 +16,22 @@ fn main() {
         .define("BUILD_EXAMPLE", "OFF")
         .define("JPEG_LIBRARY_RELEASE:PATH", &jpeg_lib_path)
         .define("JPEG_LIBRARY:PATH", &jpeg_lib_path)
-        .define("JPEG_INCLUDE_DIRS:PATH", &jpeg_include)
-        .define("JPEG_INCLUDE_DIR:PATH", &jpeg_include)
+        .define(
+            "JPEG_INCLUDE_DIRS:PATH",
+            format!(
+                "{};{}",
+                &jpeg_include.to_str().unwrap(),
+                &jpeg_include2.to_str().unwrap()
+            ),
+        )
+        .define(
+            "JPEG_INCLUDE_DIR:PATH",
+            format!(
+                "{};{}",
+                &jpeg_include.to_str().unwrap(),
+                &jpeg_include2.to_str().unwrap()
+            ),
+        )
         .build();
 
     println!("cargo:rustc-link-lib=static={}", jpeg_lib);
