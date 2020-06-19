@@ -14,26 +14,23 @@ unsafe impl<'a> Sync for DeviceList<'a> {}
 #[derive(Debug)]
 /// List of camera devices, iterate to get the device(s)
 pub struct DeviceList<'a> {
+    start: *mut *mut uvc_device,
     list: NonNull<*mut uvc_device>,
     _ph: PhantomData<&'a &'a uvc_device>,
-
-    reached_end: bool,
-    index: usize,
 }
 
 impl<'a> Drop for DeviceList<'a> {
     fn drop(&mut self) {
-        unsafe { uvc_free_device_list(self.list.as_ptr(), false as u8) }
+        unsafe { uvc_free_device_list(self.start, false as u8) }
     }
 }
 
 impl<'a> DeviceList<'a> {
     pub(crate) fn new(list: NonNull<*mut uvc_device>) -> Self {
         Self {
+            start: list.as_ptr(),
             list,
             _ph: PhantomData,
-            reached_end: false,
-            index: 0,
         }
     }
 }
@@ -42,18 +39,15 @@ impl<'a> Iterator for DeviceList<'a> {
     type Item = Device<'a>;
 
     fn next(&mut self) -> Option<Device<'a>> {
-        if self.reached_end {
+        let item = self.list.as_ptr();
+        if unsafe { (*item).is_null() } {
             return None;
         }
 
-        let item = unsafe { self.list.as_ptr().add(self.index) };
-        if item.is_null() {
-            self.reached_end = true;
-            return None;
-        }
+        let device = unsafe { Device::from_raw(*item) };
+        self.list = unsafe { NonNull::new(self.list.as_ptr().add(1)).unwrap() };
 
-        self.index += 1;
-        Some(unsafe { Device::from_raw(*item) })
+        Some(device)
     }
 }
 
