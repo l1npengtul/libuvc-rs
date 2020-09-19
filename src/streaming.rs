@@ -57,7 +57,7 @@ where
         if frame.is_null() {
             panic!("Frame is null");
         }
-        let frame = Frame::from_raw(frame);
+        let frame = std::mem::ManuallyDrop::new(Frame::from_raw(frame));
 
         if userdata.is_null() {
             panic!("Userdata is null");
@@ -69,8 +69,6 @@ where
         let data = &mut (*vtable).data;
 
         func(&frame, data);
-
-        std::mem::forget(frame); // Not our frame
     });
 
     if panic.is_err() {
