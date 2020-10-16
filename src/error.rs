@@ -1,6 +1,5 @@
 use std::ffi::CStr;
 use std::fmt;
-use uvc_sys;
 
 /// Result type of functions in this crate
 pub type Result<T> = std::result::Result<T, Error>;
