@@ -10,5 +10,11 @@ repository = "https://github.com/mulimoen/libuvc-rs.git"
 categories = ["external-ffi-bindings", "multimedia::video"]
 edition = "2018"
 
+[features]
+vendor = ["uvc-src"]
+
+[dependencies]
+uvc-src = { path = "../uvc-src", version = "0.2.0", optional = true, features = ["jpeg"] }
+
 [build-dependencies]
 bindgen = "0.54.0"

@@ -81,16 +81,5 @@ fn main() {
 
     builder.compile("uvc");
 
-    let bindings = bindgen::Builder::default()
-        .clang_arg(format!("-I{}", includedir.to_str().unwrap()))
-        .header("wrapper.h")
-        .whitelist_function("uvc_.*")
-        .whitelist_type("uvc_.*")
-        .generate()
-        .expect("Failed to generate bindings");
-
-    let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
-    bindings
-        .write_to_file(out_path.join("uvc_bindings.rs"))
-        .expect("Failed to write bindings");
+    println!("cargo:include={}", includedir.to_str().unwrap());
 }
