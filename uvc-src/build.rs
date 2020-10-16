@@ -1,6 +1,4 @@
 fn main() {
-    println!("cargo:rustc-link-lib=usb-1.0");
-
     let jpeg_include = std::env::var_os("DEP_JPEG_INCLUDE").unwrap();
     let mut jpeg_paths = std::env::split_paths(&jpeg_include);
     let jpeg_include = jpeg_paths.next().unwrap();
