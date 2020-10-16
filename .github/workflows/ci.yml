@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches:
+    - master
+  schedule:
+  - cron: '0 0 15 * *'
+
+env:
+    CARGO_TERM_COLOR: always
+    RUSTFLAGS: -D warnings
+
+jobs:
+  rustfmt:
+    name: rustfmt
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with: {submodules: true}
+    - name: Install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        profile: minimal
+        components: rustfmt
+    - name: Check formatting
+      run: cargo fmt -- --check
+
+  documentation:
+    name: documentation
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with: {submodules: true}
+    - name: Install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        profile: minimal
+    - name: Documentation
+      run: cargo doc --all-features --workspace
+
+  clippy:
+    name: clippy
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with: {submodules: true}
+    - name: Install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        profile: minimal
+        components: clippy
+    - name: Run Clippy
+      run: cargo clippy --workspace --all-features
+
+  all_vendored_platforms:
+    name: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+        - build: ubuntu
+          os: ubuntu-latest
+          rust: stable
+        - build: macos
+          os: macos-latest
+          rust: stable
+        - build: win-msvc
+          os: windows-2019
+          rust: stable-msvc
+        - build: win-gnu
+          os: windows-2019
+          rust: stable-gnu
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with: {submodules: true}
+
+    - name: Install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        profile: minimal
+        override: true
+
+    - name: Build
+      run: cargo build --features vendor
+
+    - name: Build example
+      run: cargo build --example mirror --features vendor
+
+  system_uvc:
+    name: Using system libraries
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install libuvc
+      run: sudo apt-get install libuvc-dev
+
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with: {submodules: false}
+
+    - name: Install rust
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: nightly
+          override: true
+          profile: minimal
+
+    - name: Build
+      run: cargo build
+
+    - name: Build example
+      run: cargo build --example mirror
