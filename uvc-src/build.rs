@@ -1,43 +1,89 @@
+struct Version {
+    major: usize,
+    minor: usize,
+    patch: usize,
+}
+
+const VERSION: Version = Version {
+    major: 0,
+    minor: 0,
+    patch: 6,
+};
+
 fn main() {
-    let jpeg_include = std::env::var_os("DEP_JPEG_INCLUDE").unwrap();
-    let mut jpeg_paths = std::env::split_paths(&jpeg_include);
-    let jpeg_include = jpeg_paths.next().unwrap();
+    let mut builder = cc::Build::new();
+    builder.file("source/src/ctrl.c");
+    builder.file("source/src/ctrl-gen.c");
+    builder.file("source/src/device.c");
+    builder.file("source/src/diag.c");
+    builder.file("source/src/frame.c");
+    builder.file("source/src/init.c");
+    builder.file("source/src/stream.c");
+    builder.file("source/src/misc.c");
 
-    let jpeg_version = std::env::var("DEP_JPEG_LIB_VERSION").unwrap();
-    let jpeg_lib_path = format!("{}/..", jpeg_include.to_str().unwrap(),);
-    let jpeg_lib = format!("mozjpeg{}", jpeg_version);
-    let jpeg_include2 = jpeg_paths.next().unwrap();
-
-    let dst = cmake::Config::new("source")
-        .define("ENABLE_UVC_DEBUGGING", "OFF")
-        .define("CMAKE_BUILD_TARGET", "Static")
-        .define("BUILD_EXAMPLE", "OFF")
-        .define("JPEG_LIBRARY_RELEASE:PATH", &jpeg_lib_path)
-        .define("JPEG_LIBRARY:PATH", &jpeg_lib_path)
-        .define(
-            "JPEG_INCLUDE_DIRS:PATH",
-            format!(
-                "{};{}",
-                &jpeg_include.to_str().unwrap(),
-                &jpeg_include2.to_str().unwrap()
-            ),
+    let builddir: std::path::PathBuf = std::env::var_os("OUT_DIR").unwrap().into();
+    let includedir = builddir.join("include");
+    {
+        // Copy includedir
+        std::fs::create_dir_all(includedir.join("libuvc")).unwrap();
+        {
+            let config_h = format!(
+                r#"
+#ifndef LIBUVC_CONFIG_H
+#define LIBUVC_CONFIG_H
+#define LIBUVC_VERSION_MAJOR {major}
+#define LIBUVC_VERSION_MINOR {minor}
+#define LIBUVC_VERSION_PATCH {patch}
+#define LIBUVC_VERSION_STR "{major}.{minor}.{patch}"
+#define LIBUVC_VERSION_INT (({major} << 16) | ({minor} << 8) | ({patch}))
+#define LIBUVC_VERSION_GTE(major, minor, patch) (LIB_UVC_VERSION_INT >= (((major) << 16) | ((minor) << 8) | (patch))
+#define LIBUVC_HAS_JPEG {has_jpeg}
+#endif
+"#,
+                major = VERSION.major,
+                minor = VERSION.minor,
+                patch = VERSION.patch,
+                has_jpeg = std::env::var_os("CARGO_FEATURE_JPEG").is_some() as u8,
+            );
+            use std::io::Write;
+            let mut uvc_internal =
+                std::fs::File::create(includedir.join("libuvc/libuvc_config.h")).unwrap();
+            uvc_internal.write_all(config_h.as_bytes()).unwrap();
+        }
+        std::fs::copy(
+            "source/include/libuvc/libuvc.h",
+            includedir.join("libuvc/libuvc.h"),
         )
-        .define(
-            "JPEG_INCLUDE_DIR:PATH",
-            format!(
-                "{};{}",
-                &jpeg_include.to_str().unwrap(),
-                &jpeg_include2.to_str().unwrap()
-            ),
+        .unwrap();
+        std::fs::copy(
+            "source/include/libuvc/libuvc_internal.h",
+            includedir.join("libuvc/libuvc_internal.h"),
         )
-        .build();
+        .unwrap();
+        std::fs::copy(
+            "source/include/utlist.h",
+            includedir.join("libuvc/utlist.h"),
+        )
+        .unwrap();
+        builder.include(&includedir);
+    }
 
-    println!("cargo:rustc-link-lib=static=uvc");
-    println!("cargo:rustc-link-search=native={}/lib", dst.display());
+    if std::env::var_os("CARGO_FEATURE_JPEG").is_some() {
+        builder.file("source/src/frame-mjpeg.c");
+        let jpeg_includes = std::env::var_os("DEP_JPEG_INCLUDE").unwrap();
+        for jpeg_include in std::env::split_paths(&jpeg_includes) {
+            builder.include(jpeg_include);
+        }
+    }
+
+    let usb_include = std::env::var_os("DEP_USB_1.0_INCLUDE").unwrap();
+    builder.include(usb_include);
+
+    builder.compile("uvc");
 
     let bindings = bindgen::Builder::default()
-        .clang_arg(format!("-I{}/include", dst.display()))
-        .header(format!("{}/include/libuvc/libuvc.h", dst.display()))
+        .clang_arg(format!("-I{}", includedir.to_str().unwrap()))
+        .header("wrapper.h")
         .whitelist_function("uvc_.*")
         .whitelist_type("uvc_.*")
         .generate()
