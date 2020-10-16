@@ -7,10 +7,14 @@ license-file = "source/LICENSE.txt"
 build = "build.rs"
 repository = "https://github.com/mulimoen/libuvc-rs"
 description = "Vendored version of libuvc"
+links = "uvcsrc"
+
+[features]
+jpeg = ["mozjpeg-sys"]
 
 [dependencies]
-mozjpeg-sys = { version = "0.10.4", default-features = false }
+mozjpeg-sys = { version = "0.10.4", default-features = false, optional = true }
+libusb-sys = { version = "0.4.2", package = "libusb1-sys" }
 
 [build-dependencies]
-cmake = "0.1.44"
-bindgen = "0.54.0"
+cc = "1.0.61"

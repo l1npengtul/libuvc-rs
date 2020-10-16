@@ -1,4 +1,3 @@
-use crate::uvc_sys;
 use std::ffi::CStr;
 use std::fmt;
 
