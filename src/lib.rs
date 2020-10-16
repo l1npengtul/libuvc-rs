@@ -63,7 +63,6 @@
   ```
   See also `mirror.rs` in the examples to get an example of how to capture and display a stream
 */
-pub(crate) use uvc_sys;
 
 mod context;
 mod controls;
