@@ -32,8 +32,6 @@ fn main() {
         )
         .build();
 
-    println!("cargo:rustc-link-lib=static={}", jpeg_lib);
-    println!("cargo:rustc-link-search=native={}", jpeg_lib_path);
     println!("cargo:rustc-link-lib=static=uvc");
     println!("cargo:rustc-link-search=native={}/lib", dst.display());
 
