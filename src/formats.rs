@@ -1,4 +1,4 @@
-use crate::uvc_sys::*;
+use uvc_sys::*;
 
 #[derive(Debug, Copy, Clone)]
 /// Format one can request a stream to produce

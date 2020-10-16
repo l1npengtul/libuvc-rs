@@ -7,7 +7,7 @@ use std::time::Duration;
 use crate::error::{Error, Result};
 use crate::formats::{FrameFormat, StreamFormat};
 use crate::streaming::StreamHandle;
-use crate::uvc_sys::*;
+use uvc_sys::*;
 
 unsafe impl<'a> Send for DeviceList<'a> {}
 unsafe impl<'a> Sync for DeviceList<'a> {}

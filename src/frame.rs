@@ -4,7 +4,7 @@ use std::slice;
 use crate::error::{Error, Result};
 use crate::formats::FrameFormat;
 
-use crate::uvc_sys::*;
+use uvc_sys::*;
 
 unsafe impl Send for Frame {}
 unsafe impl Sync for Frame {}
