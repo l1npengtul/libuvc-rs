@@ -11,7 +11,9 @@ const VERSION: Version = Version {
 };
 
 fn main() {
+    println!("cargo:rerun-if-changed=build.rs");
     let mut builder = cc::Build::new();
+    builder.warnings(false);
     builder.file("source/src/ctrl.c");
     builder.file("source/src/ctrl-gen.c");
     builder.file("source/src/device.c");
