@@ -400,7 +400,10 @@ impl<'a> FrameDescriptor<'a> {
     #[must_use]
     pub fn intervals(&self) -> &[u32] {
         unsafe {
-            let intervals = (*self.frame_desc.as_ptr()).intervals;
+            let intervals: *const u32 = (*self.frame_desc.as_ptr()).intervals;
+            if intervals.is_null() {
+                return &[];
+            }
             let mut len = 0;
             loop {
                 let x = *intervals.add(len);
