@@ -3,11 +3,6 @@
 [![crates.io](https://img.shields.io/crates/v/uvc.svg)](https://crates.io/crates/uvc)
 [![license](https://img.shields.io/crates/l/uvc.svg)](https://github.com/mulimoen/libuvc-rs/blob/master/LICENSE)
 
-## Maintainance
-
-This project is no longer maintained. Please open an issue if you are interested in taking over maintainance of this project or publish new versions on `crates.io`.
-
-
 ## What does this library do?
 
 
