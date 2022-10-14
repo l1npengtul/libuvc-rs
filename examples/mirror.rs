@@ -20,10 +20,7 @@ fn frame_to_raw_image(
     Ok(image)
 }
 
-fn callback_frame_to_image(
-    frame: &Frame,
-    data: &mut Arc<Mutex<Option<glium::texture::RawImage2d<u8>>>>,
-) {
+fn callback_frame_to_image(frame: &Frame, data: &Mutex<Option<glium::texture::RawImage2d<u8>>>) {
     let image = frame_to_raw_image(frame);
     match image {
         Err(x) => println!("{:#?}", x),
@@ -84,8 +81,9 @@ fn main() {
         );
 
     let frame = Arc::new(Mutex::new(None));
+    let frame2 = frame.clone();
     let _stream = streamh
-        .start_stream(callback_frame_to_image, frame.clone())
+        .start_stream(move |frame| callback_frame_to_image(frame, &frame2))
         .unwrap();
 
     use glium::glutin;

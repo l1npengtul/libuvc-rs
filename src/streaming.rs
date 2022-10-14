@@ -15,43 +15,36 @@ pub struct StreamHandle<'a> {
     pub(crate) devh: &'a DeviceHandle<'a>,
 }
 
-struct Vtable<U> {
-    func: Box<dyn Fn(&Frame, &mut U)>,
-    data: U,
-}
-
-unsafe impl<'a, U: Send + Sync> Send for ActiveStream<'a, U> {}
-unsafe impl<'a, U: Send + Sync> Sync for ActiveStream<'a, U> {}
+unsafe impl<'a> Send for ActiveStream<'a> {}
+unsafe impl<'a> Sync for ActiveStream<'a> {}
 #[derive(Debug)]
 /// Active stream
 ///
 /// Dropping this stream will stop the stream
-pub struct ActiveStream<'a, U: Send + Sync> {
+pub struct ActiveStream<'a> {
     devh: &'a crate::DeviceHandle<'a>,
-    #[allow(unused)]
-    vtable: *mut Vtable<U>,
+    callback: *mut dyn FnMut(&Frame),
 }
 
-impl<'a, U: Send + Sync> ActiveStream<'a, U> {
+impl ActiveStream<'_> {
     /// Stop the stream
     pub fn stop(self) {
         // Taking ownership of the stream, which drops it
     }
 }
 
-impl<'a, U: Send + Sync> Drop for ActiveStream<'a, U> {
+impl Drop for ActiveStream<'_> {
     fn drop(&mut self) {
         unsafe {
             uvc_stop_streaming(self.devh.devh.as_ptr());
-            let _vtable = Box::from_raw(self.vtable);
+            drop(Box::from_raw(self.callback));
         }
     }
 }
 
-unsafe extern "C" fn trampoline<F, U>(frame: *mut uvc_frame, userdata: *mut c_void)
+unsafe extern "C" fn trampoline<F>(frame: *mut uvc_frame, userdata: *mut c_void)
 where
-    F: 'static + Send + Sync + Fn(&Frame, &mut U),
-    U: 'static + Send + Sync,
+    F: FnMut(&Frame) + Send + 'static,
 {
     let panic = std::panic::catch_unwind(|| {
         if frame.is_null() {
@@ -63,12 +56,9 @@ where
             panic!("Userdata is null");
         }
 
-        let vtable = userdata as *mut Vtable<U>;
+        let func = &mut *(userdata as *mut F);
 
-        let func = &(*vtable).func;
-        let data = &mut (*vtable).data;
-
-        func(&frame, data);
+        func(&frame);
     });
 
     if panic.is_err() {
@@ -81,31 +71,25 @@ impl<'a> StreamHandle<'a> {
     /// Begin a stream, use the callback to save the frames
     ///
     /// This function is non-blocking
-    pub fn start_stream<F, U>(&'a mut self, cb: F, user_data: U) -> Result<ActiveStream<'a, U>>
+    pub fn start_stream<F>(&'a mut self, cb: F) -> Result<ActiveStream<'a>>
     where
-        F: 'static + Send + Sync + Fn(&Frame, &mut U),
-        U: 'static + Send + Sync,
+        F: FnMut(&Frame) + Send + 'static,
     {
-        let tuple = Box::new(Vtable::<U> {
-            func: Box::new(cb),
-            data: user_data,
-        });
-
-        let tuple = Box::into_raw(tuple);
+        let func = Box::into_raw(Box::new(cb));
 
         unsafe {
             let err = uvc_start_streaming(
                 self.devh.devh.as_ptr(),
                 &mut self.handle,
-                Some(trampoline::<F, U>),
-                tuple as *mut c_void,
+                Some(trampoline::<F>),
+                func as *mut c_void,
                 0,
             )
             .into();
             if err == Error::Success {
                 Ok(ActiveStream {
                     devh: self.devh,
-                    vtable: tuple,
+                    callback: func,
                 })
             } else {
                 Err(err)
