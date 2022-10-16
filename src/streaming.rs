@@ -86,14 +86,11 @@ impl<'a> StreamHandle<'a> {
                 0,
             )
             .into();
-            if err == Error::Success {
-                Ok(ActiveStream {
-                    devh: self.devh,
-                    callback: func,
-                })
-            } else {
-                Err(err)
-            }
+            Error::cvt(err)?;
+            Ok(ActiveStream {
+                devh: self.devh,
+                callback: func,
+            })
         }
     }
 }

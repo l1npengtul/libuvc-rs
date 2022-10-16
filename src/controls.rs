@@ -32,13 +32,11 @@ impl<'a> DeviceHandle<'a> {
                 uvc_req_code_UVC_GET_CUR,
             )
             .into();
-            if err != Error::Success {
-                return Err(err);
-            }
+            Error::cvt(err)?;
             match mode.assume_init() {
                 0 => Ok(ScanningMode::Interlaced),
                 1 => Ok(ScanningMode::Progressive),
-                _ => Err(Error::Other),
+                _ => Err(Error::OTHER),
             }
         }
     }
@@ -51,15 +49,13 @@ impl<'a> DeviceHandle<'a> {
                 uvc_req_code_UVC_GET_CUR,
             )
             .into();
-            if err != Error::Success {
-                return Err(err);
-            }
+            Error::cvt(err)?;
             match mode.assume_init() {
                 1 => Ok(AutoExposureMode::Manual),
                 2 => Ok(AutoExposureMode::Auto),
                 4 => Ok(AutoExposureMode::ShutterPriority),
                 8 => Ok(AutoExposureMode::AperturePriority),
-                _ => Err(Error::Other),
+                _ => Err(Error::OTHER),
             }
         }
     }
@@ -72,13 +68,11 @@ impl<'a> DeviceHandle<'a> {
                 uvc_req_code_UVC_GET_CUR,
             )
             .into();
-            if err != Error::Success {
-                return Err(err);
-            }
+            Error::cvt(err)?;
             match priority.assume_init() {
                 0 => Ok(AutoExposurePriority::Constant),
                 1 => Ok(AutoExposurePriority::Variable),
-                _ => Err(Error::Other),
+                _ => Err(Error::OTHER),
             }
         }
     }
@@ -91,11 +85,8 @@ impl<'a> DeviceHandle<'a> {
                 uvc_req_code_UVC_GET_CUR,
             )
             .into();
-            if err == Error::Success {
-                Ok(time.assume_init())
-            } else {
-                Err(err)
-            }
+            Error::cvt(err)?;
+            Ok(time.assume_init())
         }
     }
     pub fn exposure_rel(&self) -> Result<i8> {
@@ -107,11 +98,8 @@ impl<'a> DeviceHandle<'a> {
                 uvc_req_code_UVC_GET_CUR,
             )
             .into();
-            if err == Error::Success {
-                Ok(step.assume_init())
-            } else {
-                Err(err)
-            }
+            Error::cvt(err)?;
+            Ok(step.assume_init())
         }
     }
     pub fn focus_abs(&self) -> Result<u16> {
@@ -123,11 +111,8 @@ impl<'a> DeviceHandle<'a> {
                 uvc_req_code_UVC_GET_CUR,
             )
             .into();
-            if err == Error::Success {
-                Ok(focus.assume_init())
-            } else {
-                Err(err)
-            }
+            Error::cvt(err)?;
+            Ok(focus.assume_init())
         }
     }
     pub fn focus_rel(&self) -> Result<(i8, u8)> {
@@ -141,11 +126,8 @@ impl<'a> DeviceHandle<'a> {
                 uvc_req_code_UVC_GET_CUR,
             )
             .into();
-            if err == Error::Success {
-                Ok((focus_rel.assume_init(), speed.assume_init()))
-            } else {
-                Err(err)
-            }
+            Error::cvt(err)?;
+            Ok((focus_rel.assume_init(), speed.assume_init()))
         }
     }
 }

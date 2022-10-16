@@ -31,14 +31,11 @@ impl<'a> Context<'a> {
         unsafe {
             let mut ctx = std::mem::MaybeUninit::<*mut uvc_context>::uninit();
             let err = uvc_init(ctx.as_mut_ptr(), std::ptr::null_mut()).into();
-            if err == Error::Success {
-                Ok(Context {
-                    ctx: NonNull::new(ctx.assume_init()).unwrap(),
-                    _ctx: PhantomData,
-                })
-            } else {
-                Err(err)
-            }
+            Error::cvt(err)?;
+            Ok(Context {
+                ctx: NonNull::new(ctx.assume_init()).unwrap(),
+                _ctx: PhantomData,
+            })
         }
     }
 
@@ -47,9 +44,7 @@ impl<'a> Context<'a> {
         unsafe {
             let mut list = std::mem::MaybeUninit::<*mut *mut uvc_device>::uninit();
             let err = uvc_get_device_list(self.ctx.as_ptr(), list.as_mut_ptr()).into();
-            if err != Error::Success {
-                return Err(err);
-            }
+            Error::cvt(err)?;
 
             Ok(DeviceList::new(NonNull::new(list.assume_init()).unwrap()))
         }
@@ -74,9 +69,7 @@ impl<'a> Context<'a> {
                 cstr.map_or(std::ptr::null(), |v| v.as_ptr()),
             )
             .into();
-            if err != Error::Success {
-                return Err(err);
-            }
+            Error::cvt(err)?;
             Ok(Device::from_raw(device.assume_init()))
         }
     }
