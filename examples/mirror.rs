@@ -1,7 +1,6 @@
 use glium::{implement_vertex, uniform};
 
 use std::error::Error;
-use std::sync::{Arc, Mutex};
 
 use glium::Surface;
 use uvc::{Context, Frame};
@@ -18,17 +17,6 @@ fn frame_to_raw_image(
     );
 
     Ok(image)
-}
-
-fn callback_frame_to_image(frame: &Frame, data: &Mutex<Option<glium::texture::RawImage2d<u8>>>) {
-    let image = frame_to_raw_image(frame);
-    match image {
-        Err(x) => println!("{:#?}", x),
-        Ok(x) => {
-            let mut data = Mutex::lock(&data).unwrap();
-            *data = Some(x);
-        }
-    }
 }
 
 fn main() {
@@ -80,14 +68,22 @@ fn main() {
             devh.focus_rel(),
         );
 
-    let frame = Arc::new(Mutex::new(None));
-    let frame2 = frame.clone();
+    use glium::glutin;
+    let events_loop = glutin::event_loop::EventLoopBuilder::with_user_event().build();
+
+    let evloop_proxy = events_loop.create_proxy();
     let _stream = streamh
-        .start_stream(move |frame| callback_frame_to_image(frame, &frame2))
+        .start_stream(move |frame| {
+            let image = frame_to_raw_image(frame);
+            match image {
+                Err(x) => println!("{:#?}", x),
+                Ok(x) => {
+                    let _ = evloop_proxy.send_event(x);
+                }
+            }
+        })
         .unwrap();
 
-    use glium::glutin;
-    let events_loop = glutin::event_loop::EventLoop::new();
     let window = glutin::window::WindowBuilder::new().with_title("Mirror");
     let context = glutin::ContextBuilder::new();
     let display = glium::Display::new(window, context, &events_loop).unwrap();
@@ -150,28 +146,24 @@ fn main() {
 
     let mut buffer: Option<glium::texture::SrgbTexture2d> = None;
     events_loop.run(move |event, _, control_flow| {
-        if let glutin::event::Event::WindowEvent { event, .. } = event {
-            if let glutin::event::WindowEvent::CloseRequested = event {
+        match event {
+            glutin::event::Event::WindowEvent {
+                event: glutin::event::WindowEvent::CloseRequested,
+                ..
+            } => {
                 *control_flow = glutin::event_loop::ControlFlow::Exit;
                 return;
             }
-        }
-
-        let mut target = display.draw();
-        target.clear_color(0.0, 0.0, 1.0, 1.0);
-
-        let mut mutex = Mutex::lock(&frame).unwrap();
-
-        match mutex.take() {
-            None => {
-                // No new frame to render
-            }
-            Some(image) => {
+            glutin::event::Event::UserEvent(image) => {
                 let image = glium::texture::SrgbTexture2d::new(&display, image)
                     .expect("Could not use image");
                 buffer = Some(image);
             }
+            _ => {}
         }
+
+        let mut target = display.draw();
+        target.clear_color(0.0, 0.0, 1.0, 1.0);
 
         if let Some(ref b) = buffer {
             let uniforms = uniform! { u_image: b };
