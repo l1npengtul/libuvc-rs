@@ -23,7 +23,6 @@ fn main() {
     builder.file("source/src/stream.c");
     builder.file("source/src/misc.c");
 
-
     let builddir: std::path::PathBuf = std::env::var_os("OUT_DIR").unwrap().into();
     let includedir = builddir.join("include");
     {
