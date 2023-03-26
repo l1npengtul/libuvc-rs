@@ -12,9 +12,10 @@ edition = "2018"
 
 [features]
 vendor = ["uvc-src"]
+uvc_debugging = ["uvc-src/uvc_debugging"]
 
 [dependencies]
 uvc-src = { path = "../uvc-src", version = "0.2.2", optional = true, features = ["jpeg"] }
 
 [build-dependencies]
-bindgen = "0.56.0"
+bindgen = "0.64.0"

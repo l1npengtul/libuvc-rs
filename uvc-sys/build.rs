@@ -22,8 +22,8 @@ fn main() {
 
     let bindings = builder
         .header("wrapper.h")
-        .whitelist_function("uvc_.*")
-        .whitelist_type("uvc_.*")
+        .allowlist_function("uvc_.*")
+        .allowlist_type("uvc_.*")
         .generate()
         .expect("Failed to generate bindings");
 

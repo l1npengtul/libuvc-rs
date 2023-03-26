@@ -18,6 +18,7 @@ glium = "0.29.0"
 
 [features]
 vendor = ["uvc-sys/vendor"]
+uvc_debugging = ["uvc-sys/uvc_debugging"]
 
 [workspace]
 members = [
