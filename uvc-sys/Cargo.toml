@@ -1,7 +1,7 @@
 [package]
 name = "uvc-sys"
 description = "Raw wrapper of libuvc"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Magnus Ulimoen <flymagnus@gmail.com>"]
 links = "uvc"
 build = "build.rs"
@@ -14,7 +14,7 @@ edition = "2018"
 vendor = ["uvc-src"]
 
 [dependencies]
-uvc-src = { path = "../uvc-src", version = "0.2.1", optional = true, features = ["jpeg"] }
+uvc-src = { path = "../uvc-src", version = "0.2.2", optional = true, features = ["jpeg"] }
 
 [build-dependencies]
 bindgen = "0.56.0"

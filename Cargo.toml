@@ -11,7 +11,7 @@ readme = "README.md"
 edition = "2018"
 
 [dependencies]
-uvc-sys = { path = "uvc-sys", version = "0.2.0" }
+uvc-sys = { path = "uvc-sys", version = "0.2.1" }
 
 [dev-dependencies]
 glium = "0.29.0"
