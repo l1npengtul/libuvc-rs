@@ -40,12 +40,18 @@ fn main() {
 #define LIBUVC_VERSION_INT (({major} << 16) | ({minor} << 8) | ({patch}))
 #define LIBUVC_VERSION_GTE(major, minor, patch) (LIB_UVC_VERSION_INT >= (((major) << 16) | ((minor) << 8) | (patch))
 #define LIBUVC_HAS_JPEG {has_jpeg}
+{uvc_debug}
 #endif
 "#,
                 major = VERSION.major,
                 minor = VERSION.minor,
                 patch = VERSION.patch,
                 has_jpeg = std::env::var_os("CARGO_FEATURE_JPEG").is_some() as u8,
+                uvc_debug = if cfg!(feature = "uvc_debugging") {
+                    "#define UVC_DEBUGGING"
+                } else {
+                    ""
+                },
             );
             use std::io::Write;
             let mut uvc_internal =
