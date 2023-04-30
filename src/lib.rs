@@ -44,13 +44,11 @@
   let counter = Arc::new(AtomicUsize::new(0));
 
   // Get a stream, calling the closure as callback for every frame
+  let count = counter.clone();
   let stream = streamh
-      .start_stream(
-          |_frame, count| {
-              count.fetch_add(1, Ordering::SeqCst);
-          },
-          counter.clone(),
-      ).expect("Could not start stream");
+      .start_stream(|_frame| {
+          count.fetch_add(1, Ordering::SeqCst);
+      }).expect("Could not start stream");
 
   // Wait 10 seconds
   std::thread::sleep(Duration::new(10, 0));
