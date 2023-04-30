@@ -45,11 +45,8 @@ impl Frame {
         }
         .into();
 
-        if err == Error::Success {
-            Ok(new_frame)
-        } else {
-            Err(err)
-        }
+        Error::cvt(err)?;
+        Ok(new_frame)
     }
 
     /// Convert to bgr format
@@ -66,11 +63,8 @@ impl Frame {
         }
         .into();
 
-        if err == Error::Success {
-            Ok(new_frame)
-        } else {
-            Err(err)
-        }
+        Error::cvt(err)?;
+        Ok(new_frame)
     }
 
     /// Get the raw image data
@@ -114,9 +108,7 @@ impl Frame {
             let mut new_frame = Frame::from_raw(uvc_allocate_frame(0));
 
             let err = uvc_duplicate_frame(self.frame.as_ptr(), new_frame.frame.as_mut()).into();
-            if err != Error::Success {
-                return Err(err);
-            }
+            Error::cvt(err)?;
             Ok(new_frame)
         }
     }

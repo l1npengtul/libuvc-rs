@@ -78,13 +78,11 @@ impl<'a> Device<'a> {
         unsafe {
             let mut devh = std::mem::MaybeUninit::uninit();
             let err = uvc_open(self.dev.as_ptr(), devh.as_mut_ptr()).into();
-            match err {
-                Error::Success => Ok(DeviceHandle {
-                    devh: NonNull::new(devh.assume_init()).unwrap(),
-                    _devh: PhantomData,
-                }),
-                err => Err(err),
-            }
+            Error::cvt(err)?;
+            Ok(DeviceHandle {
+                devh: NonNull::new(devh.assume_init()).unwrap(),
+                _devh: PhantomData,
+            })
         }
     }
     /// Get the description of a device
@@ -92,9 +90,7 @@ impl<'a> Device<'a> {
         unsafe {
             let mut desc = std::mem::MaybeUninit::uninit();
             let err = uvc_get_device_descriptor(self.dev.as_ptr(), desc.as_mut_ptr()).into();
-            if err != Error::Success {
-                return Err(err);
-            }
+            Error::cvt(err)?;
 
             let desc = desc.assume_init();
 
@@ -236,14 +232,11 @@ impl<'a, 'b> DeviceHandle<'a> {
                 fps as i32,
             )
             .into();
-            if err == Error::Success {
-                Ok(StreamHandle {
-                    handle: handle.assume_init(),
-                    devh: self,
-                })
-            } else {
-                Err(err)
-            }
+            Error::cvt(err)?;
+            Ok(StreamHandle {
+                handle: handle.assume_init(),
+                devh: self,
+            })
         }
     }
 
