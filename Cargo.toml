@@ -17,7 +17,6 @@ uvc-sys = { path = "uvc-sys", version = "0.3.0" }
 glium = "0.29.0"
 
 [features]
-default = ["vendor"]
 vendor = ["uvc-sys/vendor"]
 uvc_debugging = ["uvc-sys/uvc_debugging"]
 
