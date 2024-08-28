@@ -14,7 +14,7 @@ edition = "2021"
 uvc-sys = { path = "uvc-sys", version = "0.3.0" }
 
 [dev-dependencies]
-glium = "0.29.0"
+glium = "0.35.0"
 
 [features]
 vendor = ["uvc-sys/vendor"]
