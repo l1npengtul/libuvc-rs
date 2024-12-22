@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with: {submodules: true}
     - name: Install rust
       uses: actions-rs/toolchain@v1
@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with: {submodules: true}
     - name: Install rust
       uses: actions-rs/toolchain@v1
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with: {submodules: true}
     - name: Install rust
       uses: actions-rs/toolchain@v1
@@ -83,7 +83,7 @@ jobs:
         #   rust: stable-gnu
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with: {submodules: true}
 
     - name: Install rust
@@ -107,7 +107,7 @@ jobs:
       run: sudo apt-get install libuvc-dev
 
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with: {submodules: false}
 
     - name: Install rust
