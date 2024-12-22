@@ -14,8 +14,8 @@ jpeg = ["mozjpeg-sys"]
 uvc_debugging = []
 
 [dependencies]
-mozjpeg-sys = { version = "0.10.4", default-features = false, optional = true }
-libusb-sys = { version = "0.4.2", package = "libusb1-sys" }
+mozjpeg-sys = { version = ">=0.10.4", default-features = false, optional = true }
+libusb-sys = { version = ">=0.4.2", package = "libusb1-sys" }
 
 [build-dependencies]
 cc = "1.0.61"
